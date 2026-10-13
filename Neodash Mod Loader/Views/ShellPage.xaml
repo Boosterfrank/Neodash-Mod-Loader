@@ -1,0 +1,33 @@
+<Page
+    x:Class="Neodash_Mod_Loader.Views.ShellPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Neodash_Mod_Loader.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="Transparent">
+
+    <NavigationView x:Name="NavView" 
+                    PaneDisplayMode="LeftCompact"
+                    IsBackButtonVisible="Collapsed"
+                    IsSettingsVisible="False"
+                    SelectionChanged="NavView_SelectionChanged"
+                    Background="Transparent">
+        <NavigationView.MenuItems>
+            <NavigationViewItem Tag="Home" Content="Home" Icon="Home" />
+            <NavigationViewItem Tag="ModLibrary" Content="Mod Library" Icon="Library" />
+        </NavigationView.MenuItems>
+        <NavigationView.FooterMenuItems>
+            <NavigationViewItem Tag="Settings" Content="Settings" Icon="Setting" />
+        </NavigationView.FooterMenuItems>
+
+        <Frame x:Name="ContentFrame" Background="Transparent">
+            <Frame.ContentTransitions>
+                <TransitionCollection>
+                    <NavigationThemeTransition />
+                </TransitionCollection>
+            </Frame.ContentTransitions>
+        </Frame>
+    </NavigationView>
+</Page>

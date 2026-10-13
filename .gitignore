@@ -1,0 +1,18 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Packaging output
+AppPackages/
+BundleArtifacts/
+Output/
+*.msix
+*.zip
+
+# Signing keys
+*.pfx

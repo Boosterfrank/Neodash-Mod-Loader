@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Neodash_Mod_Loader.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Neodash_Mod_Loader"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Neodash Mod Loader">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop Kind="BaseAlt" />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="RootGrid" Loaded="Window_Loaded" RequestedTheme="Dark">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Dark Tint Overlay behind UI -->
+        <Border Grid.RowSpan="2" Background="#60000000" IsHitTestVisible="False" />
+
+        <!-- Custom Title Bar -->
+        <Grid x:Name="AppTitleBar" Height="32" Background="Transparent" Grid.Row="0">
+            <!-- App Window Titlebar, transparent so Acrylic shows -->
+        </Grid>
+
+        <!-- Main Content Area: Will hold either Onboarding OR NavigationView -->
+        <Frame x:Name="RootFrame" Grid.Row="1" Background="Transparent" />
+    </Grid>
+</Window>
