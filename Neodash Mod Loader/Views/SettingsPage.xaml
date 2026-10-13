@@ -2,38 +2,91 @@
     x:Class="Neodash_Mod_Loader.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Neodash_Mod_Loader.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="Transparent">
 
-    <ScrollViewer Padding="16,12,16,16" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Spacing="16">
+    <Page.Resources>
+        <DataTemplate x:Key="SettingsActionLabelTemplate">
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
+        </DataTemplate>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="ContentTemplate" Value="{StaticResource SettingsActionLabelTemplate}" />
+        </Style>
+        <Style x:Key="SettingsSectionStyle" TargetType="Border">
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="SettingsSectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="SettingsActionsStyle" TargetType="Grid">
+            <Setter Property="MaxWidth" Value="640" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="ColumnSpacing" Value="8" />
+            <Setter Property="RowSpacing" Value="8" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer Padding="16,12,16,16" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+        <StackPanel Spacing="12">
             <VisualStateManager.VisualStateGroups>
-                <VisualStateGroup>
-                    <VisualState x:Name="NarrowSettings">
+                <VisualStateGroup x:Name="SettingsColumns">
+                    <VisualState x:Name="StackedSettings">
                         <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
                         <VisualState.Setters>
-                            <Setter Target="GameFolderActions.Orientation" Value="Vertical" />
-                            <Setter Target="Ue4ssActions.Orientation" Value="Vertical" />
-                            <Setter Target="DiagnosticActions.Orientation" Value="Vertical" />
-                            <Setter Target="RecoveryActions.Orientation" Value="Vertical" />
-                            <Setter Target="ThemeComboBox.(Grid.Row)" Value="1" />
-                            <Setter Target="ThemeComboBox.(Grid.Column)" Value="0" />
-                            <Setter Target="ThemeComboBox.(Grid.ColumnSpan)" Value="3" />
-                            <Setter Target="ThemeComboBox.HorizontalAlignment" Value="Left" />
-                            <Setter Target="ThemeComboBox.Margin" Value="0,12,0,0" />
-                            <Setter Target="RunSetupButton.(Grid.Row)" Value="1" />
-                            <Setter Target="RunSetupButton.(Grid.Column)" Value="0" />
-                            <Setter Target="RunSetupButton.(Grid.ColumnSpan)" Value="3" />
-                            <Setter Target="RunSetupButton.HorizontalAlignment" Value="Left" />
-                            <Setter Target="RunSetupButton.Margin" Value="0,12,0,0" />
+                            <Setter Target="AppSettingsColumn.(Grid.Row)" Value="1" />
+                            <Setter Target="AppSettingsColumn.(Grid.Column)" Value="0" />
+                            <Setter Target="AppSettingsColumn.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="GameSettingsColumn.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="AppSettingsColumn.Width" Value="NaN" />
                         </VisualState.Setters>
                     </VisualState>
-                    <VisualState x:Name="WideSettings"><VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="900" /></VisualState.StateTriggers></VisualState>
+                    <VisualState x:Name="DesktopSettings">
+                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="1100" /></VisualState.StateTriggers>
+                    </VisualState>
+                </VisualStateGroup>
+                <VisualStateGroup x:Name="SettingsActionLayout">
+                    <VisualState x:Name="CompactSettingsActions">
+                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="DetectGameButton.(Grid.Row)" Value="1" />
+                            <Setter Target="DetectGameButton.(Grid.Column)" Value="0" />
+                            <Setter Target="ChooseGameButton.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="DetectGameButton.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="OpenGameFolderButton.(Grid.Row)" Value="2" />
+                            <Setter Target="EditUe4ssConfigButton.(Grid.Row)" Value="1" />
+                            <Setter Target="EditUe4ssConfigButton.(Grid.Column)" Value="0" />
+                            <Setter Target="InstallUe4ssButton.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="EditUe4ssConfigButton.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="RemoveUe4ssButton.(Grid.Row)" Value="2" />
+                            <Setter Target="Ue4ssLogButton.(Grid.Row)" Value="1" />
+                            <Setter Target="Ue4ssLogButton.(Grid.Column)" Value="0" />
+                            <Setter Target="CrashLogButton.(Grid.Row)" Value="2" />
+                            <Setter Target="CrashLogButton.(Grid.Column)" Value="0" />
+                            <Setter Target="OperationLogButton.(Grid.ColumnSpan)" Value="3" />
+                            <Setter Target="Ue4ssLogButton.(Grid.ColumnSpan)" Value="3" />
+                            <Setter Target="CrashLogButton.(Grid.ColumnSpan)" Value="3" />
+                            <Setter Target="OpenSettingsFolderButton.(Grid.Row)" Value="1" />
+                            <Setter Target="OpenSettingsFolderButton.(Grid.Column)" Value="0" />
+                            <Setter Target="UpdateBackupsButton.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="OpenSettingsFolderButton.(Grid.ColumnSpan)" Value="2" />
+                            <Setter Target="RecoveryActions.Orientation" Value="Vertical" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="RoomySettingsActions">
+                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="720" /></VisualState.StateTriggers>
+                    </VisualState>
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
+
             <TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" />
             <InfoBar x:Name="SettingsRecoveryBar" Title="Settings could not be loaded" Severity="Error" IsClosable="False" IsOpen="False">
                 <StackPanel Spacing="8">
@@ -45,87 +98,113 @@
                     </StackPanel>
                 </StackPanel>
             </InfoBar>
-            <ContentControl x:Name="SettingsControls" HorizontalContentAlignment="Stretch">
-            <StackPanel Spacing="16">
-            <TextBlock Text="Neodash installation" Style="{ThemeResource BodyStrongTextBlockStyle}" />
-            <TextBlock x:Name="GamePathText" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
-            <StackPanel x:Name="GameFolderActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
-                <Button Content="Choose game folder" Click="ChooseGameButton_Click" />
-                <Button Content="Detect through Steam" Click="DetectGameButton_Click" />
-                <Button x:Name="OpenGameFolderButton" Content="Open game folder" Tag="folder" Click="OpenPathButton_Click" />
-            </StackPanel>
-            <TextBlock Text="UE4SS" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0" />
-            <TextBlock x:Name="Ue4ssStatusText" TextWrapping="Wrap" />
-            <StackPanel x:Name="Ue4ssActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
-                <Button x:Name="InstallUe4ssButton" Content="Install / update / repair" Click="InstallUe4ssButton_Click" />
-                <Button x:Name="RemoveUe4ssButton" Content="Remove UE4SS" Click="UninstallUe4ssButton_Click" />
-                <Button x:Name="EditUe4ssConfigButton" Content="Edit UE4SS configuration" Click="EditUe4ssConfigButton_Click" />
-            </StackPanel>
-            <TextBlock Text="Diagnostics and recovery" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0" />
-            <StackPanel x:Name="DiagnosticActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
-                <Button x:Name="OperationLogButton" Content="Operation log" Click="OpenPathButton_Click" Tag="operations" ToolTipService.ToolTip="Open the operation log when one has been created." />
-                <Button x:Name="Ue4ssLogButton" Content="UE4SS log" Click="OpenPathButton_Click" Tag="ue4ss" />
-                <Button x:Name="CrashLogButton" Content="Crash log" Click="OpenPathButton_Click" Tag="crash" ToolTipService.ToolTip="Open the crash log when one has been created." />
-                <Button Content="Update backups" Click="OpenPathButton_Click" Tag="backups" />
-                <Button Content="Settings folder" Click="OpenPathButton_Click" Tag="settings" />
-            </StackPanel>
-            
-            <TextBlock Text="Appearance &amp; behavior" Style="{ThemeResource BodyStrongTextBlockStyle}"/>
-            
-            <Grid Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                <FontIcon Glyph="&#xE790;" FontSize="20" VerticalAlignment="Center" Margin="0,0,16,0" />
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="App theme" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="SemiBold" />
-                    <TextBlock Text="Select which app theme to display" TextWrapping="Wrap" Margin="0,0,16,0" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-                
-                <ComboBox Grid.Column="2" x:Name="ThemeComboBox" AutomationProperties.Name="App theme" Width="150" SelectionChanged="ThemeComboBox_SelectionChanged" VerticalAlignment="Center">
-                    <ComboBoxItem Content="Light" Tag="Light" />
-                    <ComboBoxItem Content="Dark" Tag="Dark" />
-                    <ComboBoxItem Content="Default" Tag="Default" />
-                </ComboBox>
-            </Grid>
-            
-            <TextBlock Text="Setup" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0"/>
-            
-            <Grid Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                <FontIcon Glyph="&#xE713;" FontSize="20" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Run setup again" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="SemiBold"/>
-                    <TextBlock Text="Show onboarding again. Existing mods, profiles, and settings are kept." TextWrapping="Wrap" Margin="0,0,16,0" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-                
-                <Button x:Name="RunSetupButton" Grid.Column="2" Content="Run setup" Click="ResetAppButton_Click" VerticalAlignment="Center" />
-            </Grid>
 
-            <TextBlock Text="About" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0"/>
+            <ContentControl x:Name="SettingsControls" MaxWidth="1240" HorizontalAlignment="Left" HorizontalContentAlignment="Stretch">
+                <Grid ColumnSpacing="16" RowSpacing="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
 
-            <Grid Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Image Source="/Assets/StoreLogo.png" Width="64" Height="64" Margin="0,0,16,0" VerticalAlignment="Center" />
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Neodash Mod Loader" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="Bold" FontSize="18" />
-                    <TextBlock x:Name="AppVersionText" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
-                    <Button x:Name="CheckUpdatesButton" Content="Check for updates" Margin="0,8,0,0" />
-                    <TextBlock Text="A simple and elegant mod loader for Neodash." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
-                </StackPanel>
-            </Grid>
-            </StackPanel>
+                    <StackPanel x:Name="GameSettingsColumn" Spacing="12">
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Spacing="16">
+                                <TextBlock Text="Game and runtime" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Neodash installation" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock x:Name="GamePathText" TextWrapping="Wrap" IsTextSelectionEnabled="True" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <Grid x:Name="GameFolderActions" Style="{StaticResource SettingsActionsStyle}">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <Button x:Name="ChooseGameButton" Content="Choose game folder" Click="ChooseGameButton_Click" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="DetectGameButton" Grid.Column="1" Content="Detect through Steam" Click="DetectGameButton_Click" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="OpenGameFolderButton" Grid.Row="1" Grid.ColumnSpan="2" Content="Open game folder" Tag="folder" Click="OpenPathButton_Click" HorizontalAlignment="Left" />
+                                    </Grid>
+                                </StackPanel>
+                                <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="UE4SS" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock x:Name="Ue4ssStatusText" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <Grid x:Name="Ue4ssActions" Style="{StaticResource SettingsActionsStyle}">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <Button x:Name="InstallUe4ssButton" Content="Install / update / repair" Style="{ThemeResource AccentButtonStyle}" ContentTemplate="{StaticResource SettingsActionLabelTemplate}" Click="InstallUe4ssButton_Click" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EditUe4ssConfigButton" Grid.Column="1" Content="Edit UE4SS configuration" Click="EditUe4ssConfigButton_Click" HorizontalAlignment="Stretch" AutomationProperties.HelpText="Enabled when a UE4SS configuration file is available." ToolTipService.ToolTip="Enabled when a UE4SS configuration file is available." />
+                                        <Button x:Name="RemoveUe4ssButton" Grid.Row="1" Grid.ColumnSpan="2" Content="Remove UE4SS" Click="UninstallUe4ssButton_Click" HorizontalAlignment="Left" AutomationProperties.HelpText="Remove UE4SS runtime files installed by this loader. Enabled when those files are present." />
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Spacing="16">
+                                <TextBlock Text="Diagnostics and recovery" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Logs" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                    <Grid x:Name="DiagnosticActions" Style="{StaticResource SettingsActionsStyle}">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <Button x:Name="OperationLogButton" Content="Operation log" Click="OpenPathButton_Click" Tag="operations" ToolTipService.ToolTip="Open the operation log when one has been created." AutomationProperties.HelpText="Enabled when the loader has created an operation log." HorizontalAlignment="Stretch" />
+                                        <Button x:Name="Ue4ssLogButton" Grid.Column="1" Content="UE4SS log" Click="OpenPathButton_Click" Tag="ue4ss" AutomationProperties.HelpText="Enabled when a UE4SS log exists for this game installation." ToolTipService.ToolTip="Enabled when a UE4SS log exists for this game installation." HorizontalAlignment="Stretch" />
+                                        <Button x:Name="CrashLogButton" Grid.Column="2" Content="Crash log" Click="OpenPathButton_Click" Tag="crash" ToolTipService.ToolTip="Open the crash log when one has been created." AutomationProperties.HelpText="Enabled when the loader has created a crash log." HorizontalAlignment="Stretch" />
+                                    </Grid>
+                                </StackPanel>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Recovery locations" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                    <Grid Style="{StaticResource SettingsActionsStyle}">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <Button x:Name="UpdateBackupsButton" Content="Update backups" Click="OpenPathButton_Click" Tag="backups" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="OpenSettingsFolderButton" Grid.Column="1" Content="Settings folder" Click="OpenPathButton_Click" Tag="settings" HorizontalAlignment="Stretch" />
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel x:Name="AppSettingsColumn" Grid.Column="1" Width="320" Spacing="12">
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="&#xE790;" FontSize="20" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="Appearance" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                </Grid>
+                                <ComboBox x:Name="ThemeComboBox" Header="App theme" AutomationProperties.Name="App theme" SelectionChanged="ThemeComboBox_SelectionChanged" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Light" Tag="Light" />
+                                    <ComboBoxItem Content="Dark" Tag="Dark" />
+                                    <ComboBoxItem Content="Default" Tag="Default" />
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="&#xE713;" FontSize="20" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="Setup" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                </Grid>
+                                <TextBlock Text="Show onboarding again. Existing mods, profiles, and settings are kept." TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <Button x:Name="RunSetupButton" Content="Run setup again" Click="ResetAppButton_Click" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="About and updates" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Image Source="/Assets/StoreLogo.png" Width="48" Height="48" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="Neodash Mod Loader" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="AppVersionText" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="A simple and elegant mod loader for Neodash." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                <Button x:Name="CheckUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
             </ContentControl>
         </StackPanel>
     </ScrollViewer>
