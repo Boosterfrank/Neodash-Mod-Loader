@@ -2,6 +2,16 @@ namespace Neodash_Mod_Loader;
 
 public static class ModEntryPoints
 {
+    public static string? GetLuaDirectory(string modPath)
+    {
+        foreach (string directory in new[] { "Scripts", "Script" })
+        {
+            string root = SafePaths.Child(modPath, directory);
+            if (Directory.Exists(root) && FindEntry(root, ".lua") is not null) return root;
+        }
+        return null;
+    }
+
     public static string GetDisplayPath(string gamePath, string modPath)
     {
         modPath = SafePaths.Child(gamePath, Path.GetRelativePath(gamePath, modPath));

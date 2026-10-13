@@ -11,6 +11,7 @@ public static class CoreServiceRegistration
         services.AddSingleton<IGameService, GameService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IModWorkspace, ModWorkspace>();
+        services.AddSingleton<ICodeEditor, VisualStudioCode>();
         services.AddSingleton<IProfileService, ProfileService>();
         services.AddSingleton<IModCatalog, ModCatalog>();
         services.AddSingleton<IRuntimeService, RuntimeService>();

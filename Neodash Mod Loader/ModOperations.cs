@@ -4,7 +4,7 @@ using Neodash_Mod_Loader.Models;
 
 namespace Neodash_Mod_Loader;
 
-public static class ModOperations
+public static partial class ModOperations
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
     private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromMinutes(5) };
@@ -155,7 +155,7 @@ public static class ModOperations
         catch (Exception original)
         {
             await RecoverFailedOperationAsync(async () =>
-                EnsureSuccess(await Task.Run(() => ModPackageInstaller.RestoreBackup(path, backup, AppStorage.BackupsPath)), CancellationToken.None),
+                EnsureSuccess(await Task.Run(() => ModPackageInstaller.RollbackInstall(path, backup, AppStorage.BackupsPath)), CancellationToken.None),
                 settingsBefore, original, "Removal failed; recovery backup: " + backup);
             throw;
         }
@@ -217,7 +217,7 @@ public static class ModOperations
         {
             await RecoverFailedOperationAsync(async () =>
             {
-                if (result.BackupPath is not null) EnsureSuccess(await Task.Run(() => ModPackageInstaller.RestoreBackup(path, result.BackupPath, AppStorage.BackupsPath)), CancellationToken.None);
+                if (result.BackupPath is not null) EnsureSuccess(await Task.Run(() => ModPackageInstaller.RollbackInstall(path, result.BackupPath, AppStorage.BackupsPath)), CancellationToken.None);
             }, before, original, "Restore failed; recovery backup: " + result.BackupPath);
             throw;
         }
@@ -277,7 +277,7 @@ public static class ModOperations
             await RecoverFailedOperationAsync(async () =>
             {
                 if (result.BackupPath is not null)
-                    EnsureSuccess(await Task.Run(() => ModPackageInstaller.RestoreBackup(path, result.BackupPath, AppStorage.BackupsPath)), CancellationToken.None);
+                    EnsureSuccess(await Task.Run(() => ModPackageInstaller.RollbackInstall(path, result.BackupPath, AppStorage.BackupsPath)), CancellationToken.None);
                 else await Task.Run(() => ModPackageInstaller.Uninstall(path, result.Folders));
             }, original, originalFailure, "Install failed; recovery backup: " + result.BackupPath);
             throw;

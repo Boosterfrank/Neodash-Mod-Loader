@@ -55,4 +55,7 @@ public sealed partial class IntegrationTests
     [Fact] public Task Ue4SsStatusDetectsFutureVersionNumbersAndNestedLayouts() => AssertIsolatedAsync(nameof(Ue4SsStatusDetectsFutureVersionNumbersAndNestedLayouts), Ue4SsStatusDetectsFutureVersionNumbersAndNestedLayoutsCore);
     [Fact] public Task CatalogAvailabilityReflectsDiskAndTrackedPackageState() => AssertIsolatedAsync(nameof(CatalogAvailabilityReflectsDiskAndTrackedPackageState), scratch => { CatalogAvailability(scratch); return Task.CompletedTask; });
     [Fact] public Task RuntimeAndLogAvailabilityReflectsExistingFilesOnly() => AssertIsolatedAsync(nameof(RuntimeAndLogAvailabilityReflectsExistingFilesOnly), scratch => { RuntimeAndLogAvailability(scratch); return Task.CompletedTask; });
+    [Fact] public Task LuaCreationPreservesTransactionalState() => AssertIsolatedAsync(nameof(LuaCreationPreservesTransactionalState), LuaCreationCore);
+    [Fact] public Task LuaCreationRejectsConflictsAndLateMutations() => AssertIsolatedAsync(nameof(LuaCreationRejectsConflictsAndLateMutations), LuaCreationRefusalsCore);
+    [Fact] public Task LuaEditorFoldersAndProcessArgumentsAreSafe() => AssertIsolatedAsync(nameof(LuaEditorFoldersAndProcessArgumentsAreSafe), scratch => { LuaEditorCore(scratch); return Task.CompletedTask; });
 }

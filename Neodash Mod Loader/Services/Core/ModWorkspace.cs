@@ -40,6 +40,11 @@ public sealed class ModWorkspace(IGameService game, IAppDiagnostics diagnostics)
         return ReadEntryPoint(path, ModManager.GetModPath(path, name, enabled));
     }
 
+    public string? GetLuaScriptFolder(string name) => ModEntryPoints.GetLuaDirectory(GetModFolder(name));
+    public int MaxLuaModNameLength => ModOperations.MaximumLuaModNameLength;
+    public string? ValidateLuaModName(string? name) => ModOperations.ValidateLuaModName(name);
+    public Task CreateLuaModAsync(string name, IProgress<OperationProgress>? progress = null, CancellationToken token = default) => ModOperations.CreateLuaModAsync(name, progress, token);
+
     public IReadOnlyList<string> GetOwnedFolders(string name) => ModOperations.FindRecordForFolder(name)?.FolderNames ?? [name];
     public void ApplyChanges(IReadOnlyDictionary<string, bool> changes)
     {

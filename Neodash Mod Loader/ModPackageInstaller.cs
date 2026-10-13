@@ -73,13 +73,13 @@ public static partial class ModPackageInstaller
     public static ModInstallResult InstallFolder(string win64Path, string sourcePath, string backupRoot, IEnumerable<string> replacementFolderNames, CancellationToken cancellationToken = default)
         => InstallFolder(win64Path, sourcePath, backupRoot, replacementFolderNames, ownershipValidator: null, cancellationToken: cancellationToken);
 
-    internal static ModInstallResult InstallFolder(string win64Path, string sourcePath, string backupRoot, IEnumerable<string> replacementFolderNames, Func<IReadOnlyList<string>, IReadOnlyList<string>, string?>? ownershipValidator, CancellationToken cancellationToken)
+    internal static ModInstallResult InstallFolder(string win64Path, string sourcePath, string backupRoot, IEnumerable<string> replacementFolderNames, Func<IReadOnlyList<string>, IReadOnlyList<string>, string?>? ownershipValidator, CancellationToken cancellationToken, bool revalidateBeforeMutation = false)
     {
         try
         {
             if (!Directory.Exists(sourcePath)) return Failure($"The mod folder was not found: {sourcePath}");
             EnsureSafeDirectoryTree(sourcePath);
-            return InstallPreparedDirectory(win64Path, sourcePath, backupRoot, replacementFolderNames, allowSourceRoot: true, ownershipValidator, cancellationToken);
+            return InstallPreparedDirectory(win64Path, sourcePath, backupRoot, replacementFolderNames, allowSourceRoot: true, ownershipValidator, cancellationToken, revalidateBeforeMutation);
         }
         catch (OperationCanceledException)
         {
@@ -127,6 +127,12 @@ public static partial class ModPackageInstaller
     }
 
     public static ModInstallResult RestoreBackup(string win64Path, string backupPath, string backupRoot, CancellationToken cancellationToken = default)
+        => RestoreBackupCore(win64Path, backupPath, backupRoot, restoreFullModsList: false, cancellationToken);
+
+    internal static ModInstallResult RollbackInstall(string win64Path, string backupPath, string backupRoot)
+        => RestoreBackupCore(win64Path, backupPath, backupRoot, restoreFullModsList: true, CancellationToken.None);
+
+    private static ModInstallResult RestoreBackupCore(string win64Path, string backupPath, string backupRoot, bool restoreFullModsList, CancellationToken cancellationToken)
     {
         try
         {
@@ -160,7 +166,7 @@ public static partial class ModPackageInstaller
                     EnsureSafeDirectoryTree(source);
                     CopyDirectory(source, GetModPath(root, folder.Name, folder.Enabled), cancellationToken);
                 }
-                RestoreModsTxtForAffectedFolders(root, manifest, affectedNames);
+                RestoreModsTxt(root, manifest, affectedNames, restoreFullModsList);
                 return new ModInstallResult { Success = true, Folders = restoredNames, ReplacedFolders = affectedNames, BackupPath = currentBackup };
             }
             catch (Exception ex)
@@ -212,7 +218,7 @@ public static partial class ModPackageInstaller
         }
     }
 
-    private static ModInstallResult InstallPreparedDirectory(string win64Path, string preparedPath, string backupRoot, IEnumerable<string> replacementFolderNames, bool allowSourceRoot, Func<IReadOnlyList<string>, IReadOnlyList<string>, string?>? ownershipValidator, CancellationToken cancellationToken)
+    private static ModInstallResult InstallPreparedDirectory(string win64Path, string preparedPath, string backupRoot, IEnumerable<string> replacementFolderNames, bool allowSourceRoot, Func<IReadOnlyList<string>, IReadOnlyList<string>, string?>? ownershipValidator, CancellationToken cancellationToken, bool revalidateBeforeMutation = false)
     {
         string root = GetWin64Path(win64Path);
         EnsureSafeDirectoryTree(preparedPath);
@@ -235,6 +241,9 @@ public static partial class ModPackageInstaller
             backup = CreateSnapshot(root, targets, backupRoot, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             GameRuntime.EnsureGameClosed(root);
+            // Creation must still be new after snapshotting; never replace a folder added during preparation.
+            if (revalidateBeforeMutation && ownershipValidator?.Invoke(names, targets) is { } conflict)
+                throw new IOException(conflict);
         }
         catch
         {
@@ -310,6 +319,9 @@ public static partial class ModPackageInstaller
         {
             if (GetInstallEnabledState(mod.Name, wasEnabled, renamedFrom, allPreviouslyInstalledFoldersAreDisabled)) enabledNames.Add(mod.Name);
         }
+        // Lua entry points need a mods.txt entry even when this is the first mod installed.
+        string modsTxt = SafePaths.Child(root, Path.Combine(ModManager.ModsFolderName, "mods.txt"));
+        if (enabledNames.Count > 0 && !File.Exists(modsTxt)) File.WriteAllText(modsTxt, string.Empty);
         ModManager.EnableInModsTxt(root, enabledNames);
     }
 
@@ -460,6 +472,13 @@ public static partial class ModPackageInstaller
         {
             File.Delete(modsTxt);
         }
+    }
+
+    private static void RestoreModsTxt(string win64Path, SnapshotManifest manifest, List<string> affectedFolders, bool restoreFullList)
+    {
+        // Immediate transaction rollback restores bytes/existence; historical restore preserves newer unrelated mods.
+        if (restoreFullList) RestoreModsTxtExactly(win64Path, manifest);
+        else RestoreModsTxtForAffectedFolders(win64Path, manifest, affectedFolders);
     }
 
     // A user-requested restore should not overwrite entries for other mods installed after the snapshot.
@@ -791,17 +810,19 @@ public static partial class ModPackageInstaller
         return result;
     }
 
-    private static bool IsValidFolderName(string name)
+    internal static bool IsValidFolderName(string name)
     {
         if (string.IsNullOrWhiteSpace(name) || name is "." or ".." || Path.IsPathRooted(name) ||
             name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name.Contains(Path.DirectorySeparatorChar) ||
             name.Contains(Path.AltDirectorySeparatorChar) || name.Contains(':') || ReservedFolders.Contains(name) ||
+            name.Equals("mods.txt", StringComparison.OrdinalIgnoreCase) ||
             name.EndsWith(' ') || name.EndsWith('.'))
         {
             return false;
         }
 
-        string baseName = Path.GetFileNameWithoutExtension(name);
+        int extensionStart = name.IndexOf('.');
+        string baseName = (extensionStart < 0 ? name : name[..extensionStart]).TrimEnd(' ');
         return !WindowsDeviceNames.Contains(baseName);
     }
 

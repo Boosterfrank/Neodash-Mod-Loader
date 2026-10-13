@@ -4,8 +4,10 @@ using Neodash_Mod_Loader.Services;
 
 namespace Neodash_Mod_Loader;
 
-public sealed class UiFiles(IWindowContext window) : IDesktopFiles
+public sealed class UiFiles(IWindowContext window, ICodeEditor editor) : IDesktopFiles
 {
+    public bool CanOpenInCode => editor.IsAvailable;
+    public void OpenInCode(string folder) => editor.OpenFolder(folder);
     public async Task<string?> PickFileAsync(params string[] extensions)
     {
         var picker = new FileOpenPicker(window.WindowId);

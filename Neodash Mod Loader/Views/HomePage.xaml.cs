@@ -140,7 +140,7 @@ public sealed partial class HomePage : Page
         BulkTools.IsEnabled = canEdit && FilteredMods.Count > 0;
         EnableAllShownItem.IsEnabled = canEdit && FilteredMods.Any(mod => !mod.IsEnabled);
         DisableAllShownItem.IsEnabled = canEdit && FilteredMods.Any(mod => mod.IsEnabled);
-        NoModsText.Text = _controller?.LoadError ?? (Mods.Count == 0 ? "No UE4SS mods installed. Use Install… or drop a ZIP or mod folder here." : "No mods match. Clear search or choose All mods.");
+        NoModsText.Text = _controller?.LoadError ?? (Mods.Count == 0 ? "No UE4SS mods installed. Use Add mod… to create or install one, or drop a ZIP or mod folder here." : "No mods match. Clear search or choose All mods.");
         NoModsText.Visibility = _controller?.LoadError is not null || FilteredMods.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -254,6 +254,11 @@ public sealed partial class HomePage : Page
             await _controller.ImportZipAsync();
     }
 
+    private async void CreateLuaMod_Click(object sender, RoutedEventArgs e)
+    {
+        if (_controller is not null) await _controller.CreateLuaModAsync();
+    }
+
     private async void ImportFolderButton_Click(object sender, RoutedEventArgs e)
     {
         if (_controller is not null)
@@ -294,6 +299,11 @@ public sealed partial class HomePage : Page
             await _controller.OpenModFolderAsync(name);
     }
 
+    private async void OpenInCode_Click(object sender, RoutedEventArgs e)
+    {
+        if (ModNameFrom(sender) is { } name && _controller is not null) await _controller.OpenInCodeAsync(name);
+    }
+
     private async void UninstallMod_Click(object sender, RoutedEventArgs e)
     {
         if (ModNameFrom(sender)is { } name && _controller is not null)
@@ -326,10 +336,25 @@ public sealed partial class HomePage : Page
             return;
         foreach (object entry in menu.Items)
         {
-            if (entry is not MenuFlyoutItem { Name: "EditConfigurationItem", Tag: string name } item)
+            if (entry is not MenuFlyoutItem { Tag: string name } item)
                 continue;
+            UpdateModMenuItem(item, name);
+        }
+    }
+
+    private void UpdateModMenuItem(MenuFlyoutItem item, string name)
+    {
+        if (_controller is null) return;
+        if (item.Name == "EditConfigurationItem")
+        {
             item.IsEnabled = _controller.LoadError is null && _controller.HasModConfiguration(name);
             ToolTipService.SetToolTip(item, item.IsEnabled ? "Edit this mod's configuration files." : "No .ini, .cfg, .toml, or .json configuration files found.");
+        }
+        else if (item.Name == "OpenInCodeItem")
+        {
+            item.Visibility = _controller.LoadError is null && _controller.HasLuaScripts(name) ? Visibility.Visible : Visibility.Collapsed;
+            item.IsEnabled = _controller.CanOpenInCode;
+            ToolTipService.SetToolTip(item, item.IsEnabled ? "Open the Lua script folder in VS Code." : "Install VS Code, then reopen this menu, or use Open mod folder.");
         }
     }
 

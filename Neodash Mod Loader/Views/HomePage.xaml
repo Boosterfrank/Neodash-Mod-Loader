@@ -83,9 +83,11 @@
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <Button x:Name="InstallModButton" Content="Install…">
+                            <Button x:Name="InstallModButton" Content="Add mod…">
                                 <Button.Flyout>
                                     <MenuFlyout>
+                                        <MenuFlyoutItem Text="Create Lua mod…" Click="CreateLuaMod_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE710;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                        <MenuFlyoutSeparator />
                                         <MenuFlyoutItem Text="Install ZIP…" Click="InstallZipButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE896;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                         <MenuFlyoutItem Text="Import folder…" Click="ImportFolderButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8B5;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                     </MenuFlyout>
@@ -149,6 +151,7 @@
                                             <Button.Flyout>
                                                 <MenuFlyout>
                                                     <MenuFlyoutItem Text="Open mod folder" Tag="{x:Bind Name}" Click="OpenModFolder_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                                    <MenuFlyoutItem x:Name="OpenInCodeItem" Text="Open in VS Code" Tag="{x:Bind Name}" Visibility="Collapsed" IsEnabled="False" Click="OpenInCode_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE943;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                                     <MenuFlyoutItem x:Name="EditConfigurationItem" Text="Edit configuration" Tag="{x:Bind Name}" IsEnabled="False" Click="EditConfiguration_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE713;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                                     <MenuFlyoutSeparator Visibility="{x:Bind RecoveryVisibility}" />
                                                     <MenuFlyoutItem Text="Repair / reinstall" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRepair}" Visibility="{x:Bind RepairVisibility}" Click="RepairMod_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE90F;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>

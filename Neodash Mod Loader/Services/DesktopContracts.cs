@@ -23,6 +23,8 @@ public interface IDesktopDialogs : IUserDialogs
 
 public interface IDesktopFiles
 {
+    bool CanOpenInCode { get; }
+    void OpenInCode(string folder);
     Task<string?> PickFileAsync(params string[] extensions);
     Task<string?> PickFolderAsync();
     Task<string?> SaveFileAsync(string suggestedName, string extension);

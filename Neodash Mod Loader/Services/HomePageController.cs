@@ -112,6 +112,13 @@ public sealed partial class HomePageController(IModEditSession edits, IModWorksp
     }
 
     public Task OpenModFolderAsync(string name) => modActions.OpenModFolderAsync(name);
+    public bool CanOpenInCode => modActions.CanOpenInCode;
+    public bool HasLuaScripts(string name) => modActions.HasLuaScripts(name);
+    public Task OpenInCodeAsync(string name) => modActions.OpenInCodeAsync(name);
+    public async Task CreateLuaModAsync()
+    {
+        if (await modActions.CreateLuaAsync()) Reload();
+    }
     public Task ReportDropFailureAsync(Exception exception) => modActions.ReportDropFailureAsync(exception);
     public async Task UninstallAsync(string name)
     {

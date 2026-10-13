@@ -26,6 +26,7 @@
     <Compile Include="..\..\Neodash Mod Loader\ModVersion.cs" Link="Production\ModVersion.cs" />
     <Compile Include="..\..\Neodash Mod Loader\AppJsonContext.cs" Link="Production\AppJsonContext.cs" />
     <Compile Include="..\..\Neodash Mod Loader\ModOperations.cs" Link="Production\ModOperations.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ModOperations.LuaCreation.cs" Link="Production\ModOperations.LuaCreation.cs" />
     <Compile Include="..\..\Neodash Mod Loader\ModStateTransactions.cs" Link="Production\ModStateTransactions.cs" />
     <Compile Include="..\..\Neodash Mod Loader\SettingsManager.cs" Link="Production\SettingsManager.cs" />
     <Compile Include="..\..\Neodash Mod Loader\SettingsMigration.cs" Link="Production\SettingsMigration.cs" />

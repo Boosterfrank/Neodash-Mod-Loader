@@ -18,6 +18,7 @@ Neodash Mod Loader is a Windows desktop app for the Steam version of Neodash. Br
 ## Features
 
 - **Install mods** from the built-in library, local ZIP archives, or folders. Drag and drop packages onto the installed-mod list.
+- **Create Lua mods** with a named folder and starter `Scripts/main.lua`. Open a Lua mod's script folder directly in VS Code.
 - **Manage your collection** with search, filters, bulk enable/disable actions, and direct access to mod folders and configuration files.
 - **Update and recover** with library update checks, an Update all action, repair/reinstall for managed packages, and restoration from the last update backup.
 - **Switch profiles** to apply different enabled-mod selections. Create, rename, delete, import, and export profiles.
@@ -47,10 +48,10 @@ The [Windows CI workflow](.github/workflows/ci.yml) also produces a `Neodash-Mod
 1. Run `Neodash Mod Loader.exe`.
 2. Let the app detect Neodash through Steam, or use **Settings → Choose game folder**. You can select the installation root or its `Runway/Binaries/Win64` folder; the app checks for `Runway-Win64-Shipping.exe`.
 3. Install UE4SS during setup, or use **Settings → Install / update / repair**. If you already have UE4SS installed, you can continue without installing it again.
-4. Open **Mod Library** to browse and install mods, or use **Home → Install… → Install ZIP / Import Folder** for a local package.
+4. Open **Mod Library** to browse and install mods, or use **Home → Add mod…** to install a local ZIP, import a folder, or create a Lua mod.
 5. Select the mods you want enabled, choose **Save Changes**, and use **Launch Neodash**.
 
-Close Neodash before installing, updating, enabling, disabling, repairing, restoring, or removing mods.
+Close Neodash before creating, installing, updating, enabling, disabling, repairing, restoring, or removing mods.
 
 ## Using the loader
 
@@ -61,11 +62,20 @@ Open a mod's action menu on **Home** to access its folder, configuration, repair
 | Action | Behavior |
 | --- | --- |
 | Enable / disable | Changes take effect after **Save Changes**. Disabled mods are kept in `DisabledMods` so they can be enabled again. |
+| Open in VS Code | Opens the folder containing the mod's Lua entry point (`Scripts` or `Script`). Appears for Lua mods, including disabled and mixed Lua/DLL mods, and is disabled when VS Code isn't found. |
 | Repair / reinstall | Reinstalls a package tracked by the loader using its recorded source. That source must still be available. |
 | Restore last update backup | Restores the previous files and enabled state when a valid backup exists for that managed mod. |
 | Uninstall | Permanently deletes the mod's enabled and disabled copies, including files inside those folders. For a tracked package with multiple mod folders, all of its folders are removed. |
 
 Uninstall is not an undoable disable action. Keep a separate copy of any configuration or other files you want to retain before uninstalling.
+
+### Creating a Lua mod
+
+Choose **Home → Add mod… → Create Lua mod…**, enter a unique mod name, then choose **Create mod**. The loader creates `Mods/<name>/Scripts/main.lua`, registers it in `mods.txt`, and enables it in the active profile. The starter script prints a loaded message; add your own Lua code to it. Existing enabled or disabled folders and package-owned names are protected from replacement.
+
+Use the mod's action menu → **Open in VS Code** to edit its script folder. The loader finds standard user/system VS Code installations and portable installations on `PATH`; installing VS Code is optional. You can also use **Open mod folder** and your preferred editor. Mod creation currently supports Lua only.
+
+For Lua API examples and the script layout, see the official [UE4SS Lua mod guide](https://docs.ue4ss.com/dev/guides/creating-a-lua-mod.html).
 
 Supported packages contain UE4SS mod folders, such as a folder with `Scripts/`, `Script/main.lua`, or `dlls/`. ZIP packages may contain several mod folders or a supported wrapper layout. Archives containing a single mod directly at the root can be imported with a chosen folder name. See the [installer](Neodash%20Mod%20Loader/ModPackageInstaller.cs) for the exact validation rules.
 

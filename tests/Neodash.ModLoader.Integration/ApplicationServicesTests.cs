@@ -277,6 +277,10 @@ public sealed class ApplicationServicesTests
 
         public Task ImportZipAsync(string path, IProgress<OperationProgress>? progress = null, CancellationToken token = default) => throw new NotSupportedException();
         public Task ImportFolderAsync(string path, IProgress<OperationProgress>? progress = null, CancellationToken token = default) => throw new NotSupportedException();
+        public int MaxLuaModNameLength => 64;
+        public string? ValidateLuaModName(string? name) => throw new NotSupportedException();
+        public string? GetLuaScriptFolder(string name) => throw new NotSupportedException();
+        public Task CreateLuaModAsync(string name, IProgress<OperationProgress>? progress = null, CancellationToken token = default) => throw new NotSupportedException();
         public Task UninstallAsync(string name) => throw new NotSupportedException();
         public Task RepairAsync(string name, IProgress<OperationProgress>? progress = null, CancellationToken token = default) => throw new NotSupportedException();
         public Task RestoreAsync(string name) => throw new NotSupportedException();
