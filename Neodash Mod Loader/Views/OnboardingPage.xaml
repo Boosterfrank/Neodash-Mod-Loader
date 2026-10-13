@@ -1,42 +1,58 @@
-<Page
-    x:Class="Neodash_Mod_Loader.Views.OnboardingPage"
+<Page x:Class="Neodash_Mod_Loader.Views.OnboardingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Neodash_Mod_Loader.Views"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    xmlns:ui="using:Neodash_Mod_Loader.UI"
     Background="Transparent">
-
-    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Center">
-        <Grid MaxWidth="640" HorizontalAlignment="Stretch">
+    <ScrollViewer x:Name="SetupViewport" Padding="24" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center">
+        <Grid Width="{Binding ViewportWidth, ElementName=SetupViewport}" MaxWidth="1120" HorizontalAlignment="Center">
             <ContentControl x:Name="WelcomePanel" HorizontalContentAlignment="Stretch">
-                <StackPanel Spacing="16">
-                    <Image Source="/Assets/game_logo.png" Width="180" Height="72" HorizontalAlignment="Left" AutomationProperties.Name="Neodash" />
-                    <TextBlock Text="Welcome to Neodash Mod Loader" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" />
-                    <TextBlock Text="Install UE4SS to load mods, with an optional CustomServer installation." Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Neodash installation" Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                        <TextBlock x:Name="GamePathText" TextWrapping="Wrap" IsTextSelectionEnabled="True" AutomationProperties.LiveSetting="Polite" />
-                        <Button x:Name="ChooseGameButton" Content="Choose Neodash folder" Click="ChooseGameButton_Click" />
+                <Grid x:Name="WelcomeLayout" ColumnSpacing="32" RowSpacing="24">
+                    <VisualStateManager.VisualStateGroups>
+                        <VisualStateGroup>
+                            <VisualState x:Name="StackedSetup">
+                                <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=WelcomeLayout}" MaxWidth="900" /></VisualState.StateTriggers>
+                                <VisualState.Setters>
+                                    <Setter Target="SetupIntroduction.(Grid.ColumnSpan)" Value="2" />
+                                    <Setter Target="SetupOptions.(Grid.Column)" Value="0" />
+                                    <Setter Target="SetupOptions.(Grid.Row)" Value="1" />
+                                    <Setter Target="SetupOptions.(Grid.ColumnSpan)" Value="2" />
+                                </VisualState.Setters>
+                            </VisualState>
+                            <VisualState x:Name="DesktopSetup"><VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=WelcomeLayout}" MinWidth="900" /></VisualState.StateTriggers></VisualState>
+                        </VisualStateGroup>
+                    </VisualStateManager.VisualStateGroups>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="1.2*" /></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <StackPanel x:Name="SetupIntroduction" Spacing="16" VerticalAlignment="Center">
+                        <Image Source="/Assets/game_logo.png" Width="180" Height="72" HorizontalAlignment="Left" AutomationProperties.Name="Neodash" />
+                        <TextBlock Text="Welcome to Neodash Mod Loader" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="Install UE4SS to load mods, with an optional CustomServer installation." Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <CheckBox x:Name="RecommendedModsCheckBox" IsChecked="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                        <TextBlock Text="Also install CustomServer (recommended)" TextWrapping="Wrap" />
-                    </CheckBox>
-                    <TextBlock Text="Close Neodash before installing. Downloads can be cancelled safely." FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                    <StackPanel Spacing="4">
-                        <Button x:Name="StartSetupButton" Content="Start setup" Style="{ThemeResource AccentButtonStyle}" Click="StartSetupButton_Click" Padding="24,8" />
-                        <HyperlinkButton x:Name="SkipButton" Content="Continue without installing" Click="CompleteSetupButton_Click" />
-                        <TextBlock Text="You can choose a game folder and install UE4SS later in Settings." FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                    </StackPanel>
-                </StackPanel>
+                    <Border x:Name="SetupOptions" Grid.Column="1" Padding="24" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Neodash installation" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                <TextBlock x:Name="GamePathText" TextWrapping="Wrap" IsTextSelectionEnabled="True" AutomationProperties.LiveSetting="Polite" />
+                                <Button x:Name="ChooseGameButton" Content="Choose Neodash folder" Style="{StaticResource DesktopActionButtonStyle}" Click="ChooseGameButton_Click" />
+                            </StackPanel>
+                            <CheckBox x:Name="RecommendedModsCheckBox" IsChecked="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <TextBlock Text="Also install CustomServer (recommended)" TextWrapping="Wrap" />
+                            </CheckBox>
+                            <TextBlock Text="Close Neodash before installing. Downloads can be cancelled safely." FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            <StackPanel Spacing="8">
+                                <Button x:Name="StartSetupButton" Content="Start setup" Style="{StaticResource DesktopAccentActionButtonStyle}" Click="StartSetupButton_Click" Padding="24,8" />
+                                <HyperlinkButton x:Name="SkipButton" Click="CompleteSetupButton_Click" HorizontalAlignment="Left"><TextBlock Text="Continue without installing" TextWrapping="Wrap" /></HyperlinkButton>
+                                <TextBlock Text="You can choose a game folder and install UE4SS later in Settings." FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </ContentControl>
-
-            <StackPanel x:Name="FinishedPanel" Spacing="16" Visibility="Collapsed">
+            <StackPanel x:Name="FinishedPanel" MaxWidth="640" HorizontalAlignment="Center" Spacing="16" Visibility="Collapsed">
                 <Image Source="/Assets/game_logo.png" Width="180" Height="72" HorizontalAlignment="Left" AutomationProperties.Name="Neodash" />
                 <TextBlock Text="Setup complete" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" />
                 <TextBlock x:Name="SetupResultText" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
-                <Button x:Name="FinishButton" Content="Open mod loader" Style="{ThemeResource AccentButtonStyle}" Click="CompleteSetupButton_Click" Padding="24,8" />
+                <Button x:Name="FinishButton" Content="Open mod loader" Style="{StaticResource DesktopAccentActionButtonStyle}" Click="CompleteSetupButton_Click" Padding="24,8" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

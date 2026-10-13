@@ -8,9 +8,18 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+            <DataTemplate x:Key="DesktopActionLabelTemplate">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
+            </DataTemplate>
+            <Style x:Key="DesktopActionButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="MinHeight" Value="32" />
+                <Setter Property="ContentTemplate" Value="{StaticResource DesktopActionLabelTemplate}" />
+            </Style>
+            <Style x:Key="DesktopAccentActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+                <Setter Property="MinHeight" Value="32" />
+                <Setter Property="ContentTemplate" Value="{StaticResource DesktopActionLabelTemplate}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

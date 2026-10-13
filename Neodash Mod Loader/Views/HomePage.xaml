@@ -3,16 +3,17 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Neodash_Mod_Loader.Views"
+    xmlns:ui="using:Neodash_Mod_Loader.UI"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="Transparent">
 
-    <Grid Padding="16,12,16,16" RowSpacing="12">
+    <Grid x:Name="PageRoot" Padding="16,12,16,16" RowSpacing="12">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="HeaderLayout">
                 <VisualState x:Name="NarrowHeader">
-                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=PageRoot}" MaxWidth="760" /></VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="ProfileTools.(Grid.Row)" Value="1" />
                         <Setter Target="ProfileTools.(Grid.Column)" Value="0" />
@@ -22,28 +23,28 @@
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideHeader">
-                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="760" /></VisualState.StateTriggers>
+                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=PageRoot}" MinWidth="760" /></VisualState.StateTriggers>
                 </VisualState>
             </VisualStateGroup>
             <VisualStateGroup x:Name="ToolbarLayout">
                 <VisualState x:Name="NarrowToolbar">
-                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=PageRoot}" MaxWidth="1000" /></VisualState.StateTriggers>
                     <VisualState.Setters>
                         <Setter Target="SearchTools.(Grid.Row)" Value="1" />
                         <Setter Target="SearchTools.(Grid.Column)" Value="0" />
-                        <Setter Target="SearchTools.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="SearchTools.(Grid.ColumnSpan)" Value="3" />
                         <Setter Target="SearchTools.Margin" Value="0,8,0,0" />
-                        <Setter Target="BulkTools.(Grid.Row)" Value="1" />
-                        <Setter Target="BulkTools.Margin" Value="0,8,0,0" />
                         <Setter Target="FooterWarning.(Grid.ColumnSpan)" Value="2" />
                         <Setter Target="FooterActions.(Grid.Row)" Value="1" />
                         <Setter Target="FooterActions.(Grid.Column)" Value="0" />
                         <Setter Target="FooterActions.(Grid.ColumnSpan)" Value="2" />
                         <Setter Target="FooterActions.Margin" Value="0,8,0,0" />
+                        <Setter Target="FooterActions.HorizontalAlignment" Value="Left" />
+                        <Setter Target="FooterActions.Orientation" Value="Vertical" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideToolbar">
-                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="1000" /></VisualState.StateTriggers>
+                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=PageRoot}" MinWidth="1000" /></VisualState.StateTriggers>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
@@ -116,15 +117,29 @@
                         </Button>
                     </Grid>
 
-                    <Grid Grid.Row="1" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                    <Grid x:Name="ModsTable" Grid.Row="1" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="ModsTableLayout">
+                                <VisualState x:Name="NarrowModsTable">
+                                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=ModsTable}" MaxWidth="620" /></VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="EntryPointHeader.Visibility" Value="Collapsed" />
+                                        <Setter Target="ModHeader.(Grid.ColumnSpan)" Value="2" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="WideModsTable">
+                                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=ModsTable}" MinWidth="620" /></VisualState.StateTriggers>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                         <Grid Padding="12,10" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="Auto" MinWidth="48" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Enabled" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="Mod" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Grid.Column="2" Text="Entry point" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock x:Name="ModHeader" Grid.Column="1" Text="Mod" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock x:Name="EntryPointHeader" Grid.Column="2" Text="Entry point" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <ListView x:Name="InstalledModsList" Grid.Row="1" Padding="0" AutomationProperties.Name="Installed UE4SS mods" ItemsSource="{x:Bind FilteredMods, Mode=OneWay}" SelectionMode="None" Background="Transparent" AllowDrop="True" Drop="ModList_Drop">
                             <ListView.ItemContainerStyle>
@@ -136,16 +151,34 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="local:ModItem">
-                                    <Grid Padding="12,8" MinHeight="56" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                    <Grid x:Name="ModRow" Padding="12,8" MinHeight="56" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="ModRowLayout">
+                                                <VisualState x:Name="NarrowModRow">
+                                                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=ModRow}" MaxWidth="620" /></VisualState.StateTriggers>
+                                                    <VisualState.Setters>
+                                                        <Setter Target="ModIdentity.(Grid.ColumnSpan)" Value="2" />
+                                                        <Setter Target="ModEntryPoint.(Grid.Row)" Value="1" />
+                                                        <Setter Target="ModEntryPoint.(Grid.Column)" Value="1" />
+                                                        <Setter Target="ModEntryPoint.(Grid.ColumnSpan)" Value="2" />
+                                                        <Setter Target="ModEntryPoint.Margin" Value="0,2,12,0" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="WideModRow">
+                                                    <VisualState.StateTriggers><ui:ElementWidthTrigger TargetElement="{Binding ElementName=ModRow}" MinWidth="620" /></VisualState.StateTriggers>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="80" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="Auto" MinWidth="48" />
                                         </Grid.ColumnDefinitions>
                                         <CheckBox AutomationProperties.Name="{x:Bind Name}" AutomationProperties.HelpText="Enable or disable this mod, then save changes." IsChecked="{x:Bind IsEnabled, Mode=TwoWay}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="32" MinHeight="32" />
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
-                                            <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" />
-                                            <TextBlock Text="{x:Bind ManagedVersion}" Visibility="{x:Bind ManagedVersionVisibility}" ToolTipService.ToolTip="{x:Bind ManagedVersion}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <StackPanel x:Name="ModIdentity" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                            <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" />
+                                            <TextBlock Text="{x:Bind ManagedVersion}" Visibility="{x:Bind ManagedVersionVisibility}" ToolTipService.ToolTip="{x:Bind ManagedVersion}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                         </StackPanel>
-                                        <TextBlock Grid.Column="2" Text="{x:Bind EntryPointPath, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind EntryPointPath, Mode=OneWay}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="ModEntryPoint" Grid.Column="2" Text="{x:Bind EntryPointPath, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind EntryPointPath, Mode=OneWay}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
                                         <Button Grid.Column="3" MinWidth="40" MinHeight="32" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Mod actions" AutomationProperties.HelpText="{x:Bind Name}" ToolTipService.ToolTip="Mod actions" Loaded="ModActionsButton_Loaded">
                                             <FontIcon Glyph="&#xE712;" FontSize="16" />
                                             <Button.Flyout>

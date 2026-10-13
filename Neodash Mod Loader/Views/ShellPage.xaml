@@ -9,7 +9,10 @@
     Background="Transparent">
 
     <NavigationView x:Name="NavView" 
-                    PaneDisplayMode="LeftCompact"
+                    PaneDisplayMode="Auto"
+                    OpenPaneLength="208"
+                    CompactPaneLength="48"
+                    ExpandedModeThresholdWidth="1200"
                     IsBackButtonVisible="Collapsed"
                     IsSettingsVisible="False"
                     SelectionChanged="NavView_SelectionChanged"
