@@ -4,6 +4,7 @@ using Neodash_Mod_Loader.Models;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Neodash_Mod_Loader.Services;
 
 namespace Neodash_Mod_Loader.Views;
 
@@ -19,8 +20,27 @@ public partial class ModLibraryItemViewModel : INotifyPropertyChanged
     public bool HasUpdate { get; set; }
     public Visibility RepairVisibility { get; set; } = Visibility.Collapsed;
     public bool CanRepair { get; set; }
-    public string ButtonText { get; set { field = value; OnPropertyChanged(); } } = "Install";
-    public bool IsButtonEnabled { get; set { field = value; OnPropertyChanged(); } } = true;
+
+    public string ButtonText
+    {
+        get;
+        set
+        {
+            field = value;
+            OnPropertyChanged();
+        }
+    } = "Install";
+
+    public bool IsButtonEnabled
+    {
+        get;
+        set
+        {
+            field = value;
+            OnPropertyChanged();
+        }
+    } = true;
+
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new(name));
 }
@@ -28,22 +48,52 @@ public partial class ModLibraryItemViewModel : INotifyPropertyChanged
 public sealed partial class ModLibraryPage : Page
 {
     public ObservableCollection<ModLibraryItemViewModel> Mods { get; } = [];
+
     private ModLibraryResponse? _catalog;
     private bool _busy;
     private bool _loading;
+    private bool _active;
+    private ModLibraryController? _controller;
+    private ModLibraryController Controller => _controller ?? throw new InvalidOperationException("The mod library has not been activated.");
 
     public ModLibraryPage()
     {
         InitializeComponent();
-        Loaded += async (_, _) => { ModOperations.Changed += OperationsChanged; await LoadLibraryAsync(); };
-        Unloaded += (_, _) => ModOperations.Changed -= OperationsChanged;
+        Loaded += (_, _) => StartPage();
+        Unloaded += (_, _) =>
+        {
+            if (!_active)
+                return;
+            Controller.Changed -= OperationsChanged;
+            _active = false;
+        };
     }
 
-    private void OperationsChanged(object? sender, EventArgs args) => DispatcherQueue.TryEnqueue(ApplyFilter);
+    internal void Activate(ModLibraryController controller)
+    {
+        _controller = controller;
+        if (IsLoaded)
+            StartPage();
+    }
 
+    private void StartPage()
+    {
+        if (_controller is null || _active)
+            return;
+        _active = true;
+        Controller.Changed += OperationsChanged;
+        _ = LoadLibraryAsync();
+    }
+
+    private void OperationsChanged(object? sender, EventArgs args) => DispatcherQueue.TryEnqueue(() =>
+    {
+        if (_active)
+            ApplyFilter();
+    });
     private async Task LoadLibraryAsync()
     {
-        if (_loading) return;
+        if (_loading)
+            return;
         _loading = true;
         RefreshButton.IsEnabled = false;
         ModsListView.IsEnabled = false;
@@ -54,7 +104,7 @@ public sealed partial class ModLibraryPage : Page
         ErrorText.Visibility = Visibility.Collapsed;
         try
         {
-            _catalog = await ModOperations.LoadCatalogAsync();
+            _catalog = await Controller.LoadAsync();
             LibraryTitle.Text = _catalog.Name ?? "Mod Library";
             LibrarySubtitle.Text = _catalog.Subtitle ?? "Browse and install mods";
             ApplyFilter();
@@ -63,8 +113,9 @@ public sealed partial class ModLibraryPage : Page
         {
             ErrorText.Text = "Couldn't refresh the library: " + ex.Message + " Use Refresh to try again.";
             ErrorText.Visibility = Visibility.Visible;
-            if (_catalog is null) LibrarySubtitle.Text = "Library unavailable";
-            AppStorage.Log("Library load failed.", ex);
+            if (_catalog is null)
+                LibrarySubtitle.Text = "Library unavailable";
+            Controller.LogLoadFailure(ex);
         }
         finally
         {
@@ -77,125 +128,117 @@ public sealed partial class ModLibraryPage : Page
         }
     }
 
-    private static ModLibraryItemViewModel CreateModViewModel(ModLibraryItem mod)
+    private ModLibraryItemViewModel CreateModViewModel(ModLibraryItem mod)
     {
-        var record = ModOperations.FindRecord(mod);
-        var folders = ModOperations.GetInstalledFolders(mod);
-        string? version = folders.Count > 0 ? record?.Version ?? SettingsManager.Current.GetInstalledModVersion(mod.Name) : null;
-        bool installed = folders.Count > 0;
-        bool incomplete = record is not null && folders.Count != record.FolderNames.Count;
-        int? comparison = ModVersion.Compare(mod.Version, version);
-        bool update = installed && comparison > 0;
-        string status = "Not installed";
-        string button = "Install";
-        if (installed) { status = "Installed: " + (version ?? "version unknown"); button = "Installed"; }
-        if (update) button = "Update";
-        if (incomplete) { status = "Missing files — repair recommended"; button = "Repair"; }
-        return new ModLibraryItemViewModel { Mod = mod, IsInstalled = installed, HasUpdate = update,
-            InstalledText = status,
-            ButtonText = button,
-            RepairVisibility = installed && !incomplete && !update ? Visibility.Visible : Visibility.Collapsed,
-            CanRepair = installed && GamePathResolver.GetNeodashWin64Path().Length > 0,
-            IsButtonEnabled = GamePathResolver.GetNeodashWin64Path().Length > 0 && (!installed || incomplete || update)
+        var state = Controller.GetState(mod);
+        return new ModLibraryItemViewModel
+        {
+            Mod = mod,
+            IsInstalled = state.IsInstalled,
+            HasUpdate = state.HasUpdate,
+            InstalledText = state.Status,
+            ButtonText = state.ButtonText,
+            RepairVisibility = state.ShowRepair ? Visibility.Visible : Visibility.Collapsed,
+            CanRepair = state.CanRepair,
+            IsButtonEnabled = state.CanInstall
         };
     }
 
     private void ApplyFilter()
     {
-        if (_catalog is null) return;
+        if (_catalog is null)
+            return;
         Mods.Clear();
         string search = SearchBox.Text.Trim();
         int filter = LibraryFilter.SelectedIndex;
         foreach (var mod in _catalog.Mods ?? [])
         {
             var item = CreateModViewModel(mod);
-            if (search.Length > 0 && !mod.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
-                && !mod.DeveloperName.Contains(search, StringComparison.OrdinalIgnoreCase)) continue;
-            if (filter == 1 && !item.IsInstalled || filter == 2 && !item.HasUpdate) continue;
+            if (search.Length > 0 && !mod.Name.Contains(search, StringComparison.OrdinalIgnoreCase) && !mod.DeveloperName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (filter == 1 && !item.IsInstalled || filter == 2 && !item.HasUpdate)
+                continue;
             Mods.Add(item);
         }
+
         ModsListView.ItemsSource = Mods;
-        EmptyLibraryText.Text = (_catalog.Mods?.Count ?? 0) == 0
-            ? "The library has no mods yet. Use Refresh to check again."
-            : "No mods match. Clear search or choose All mods.";
+        EmptyLibraryText.Text = (_catalog.Mods?.Count ?? 0) == 0 ? "The library has no mods yet. Use Refresh to check again." : "No mods match. Clear search or choose All mods.";
         EmptyLibraryText.Visibility = !_loading && Mods.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateAllButton.IsEnabled = !_busy && !_loading && Mods.Any(m => m.HasUpdate);
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
     private void LibraryFilter_SelectionChanged(object sender, SelectionChangedEventArgs e) => ApplyFilter();
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e) { if (!_busy) await LoadLibraryAsync(); }
+    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_busy)
+            await LoadLibraryAsync();
+    }
 
     private async Task InstallAsync(ModLibraryItem mod)
     {
-        if (_busy || _loading || ModOperations.IsBusy) return;
-        string? version = ModOperations.GetInstalledFolders(mod).Count > 0
-            ? ModOperations.FindRecord(mod)?.Version ?? SettingsManager.Current.GetInstalledModVersion(mod.Name)
-            : null;
-        if (ModVersion.Compare(mod.Version, version) < 0 && !await UiOperations.ConfirmAsync(XamlRoot, "Install older version?",
-            $"The library offers {mod.Version}, but {version} is already installed. Replace it with the older version?", "Install older version")) return;
+        if (_busy || _loading || Controller.IsBusy)
+            return;
         _busy = true;
         LibraryControls.IsEnabled = false;
-        try { await UiOperations.RunAsync(XamlRoot, "Install " + mod.Name, (p, t) => ModOperations.InstallCatalogAsync(mod, p, t)); }
-        finally { _busy = false; LibraryControls.IsEnabled = true; ApplyFilter(); }
+        try
+        {
+            await Controller.InstallAsync(mod);
+        }
+        finally
+        {
+            _busy = false;
+            LibraryControls.IsEnabled = true;
+            ApplyFilter();
+        }
     }
 
     private async void InstallButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement { Tag: ModLibraryItemViewModel item }) await InstallAsync(item.Mod);
+        if (sender is FrameworkElement { Tag: ModLibraryItemViewModel item })
+            await InstallAsync(item.Mod);
     }
 
     private async void OpenModFolder_Click(object sender, RoutedEventArgs e)
     {
-        if (_busy || _loading || ModOperations.IsBusy || sender is not FrameworkElement { Tag: ModLibraryItemViewModel item }) return;
-        try
-        {
-            string game = GamePathResolver.RequireGamePath();
-            var folders = ModOperations.GetInstalledFolders(item.Mod);
-            if (folders.Count == 0) throw new DirectoryNotFoundException("The mod folder no longer exists. Refresh the library to update its status.");
-            string? folder = folders.Count == 1 ? folders[0] : await ChooseModFolderAsync(item.Name, folders);
-            if (folder is null) return;
-            var installed = ModManager.GetMods(game).Find(mod => mod.Name.Equals(folder, StringComparison.OrdinalIgnoreCase));
-            if (string.IsNullOrEmpty(installed.Name)) throw new DirectoryNotFoundException("The mod folder no longer exists. Refresh the library to update its status.");
-            string path = SafePaths.Child(game, Path.GetRelativePath(game, ModManager.GetModPath(game, installed.Name, installed.IsEnabled)));
-            UiFiles.OpenPath(path);
-        }
-        catch (Exception ex) { await UiOperations.ShowMessageAsync(XamlRoot, "Couldn't open mod folder", ex.Message); }
-    }
-
-    private async Task<string?> ChooseModFolderAsync(string name, List<string> folders)
-    {
-        var picker = new ComboBox { Header = "Mod folder", ItemsSource = folders, SelectedIndex = 0, HorizontalAlignment = HorizontalAlignment.Stretch };
-        var dialog = new ContentDialog { Title = "Open " + name + " folder", Content = picker, PrimaryButtonText = "Open folder", CloseButtonText = "Cancel", XamlRoot = XamlRoot };
-        return await UiOperations.ShowDialogAsync(dialog) == ContentDialogResult.Primary ? picker.SelectedItem as string : null;
+        if (_busy || _loading || Controller.IsBusy || sender is not FrameworkElement { Tag: ModLibraryItemViewModel item })
+            return;
+        await Controller.OpenFolderAsync(item.Mod);
     }
 
     private async void UninstallButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_busy || _loading || ModOperations.IsBusy || sender is not FrameworkElement { Tag: ModLibraryItemViewModel item }) return;
-        var folders = ModOperations.FindRecord(item.Mod)?.FolderNames ?? ModOperations.GetInstalledFolders(item.Mod);
-        if (folders.Count == 0) return;
-        if (!await UiOperations.ConfirmAsync(XamlRoot, "Delete mod?", $"Permanently delete {string.Join(", ", folders)} and remove it from profiles for this game installation?", "Uninstall")) return;
-        _busy = true;
-        LibraryControls.IsEnabled = false;
-        try { await UiOperations.RunAsync(XamlRoot, "Uninstall " + item.Name, (_, _) => ModOperations.UninstallCatalogAsync(item.Mod), allowCancellation: false); }
-        finally { _busy = false; LibraryControls.IsEnabled = true; ApplyFilter(); }
-    }
-
-    private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_busy || _loading || ModOperations.IsBusy) return;
-        var updates = (_catalog?.Mods ?? []).Where(m => CreateModViewModel(m).HasUpdate).ToList();
-        if (updates.Count == 0) return;
+        if (_busy || _loading || Controller.IsBusy || sender is not FrameworkElement { Tag: ModLibraryItemViewModel item })
+            return;
         _busy = true;
         LibraryControls.IsEnabled = false;
         try
         {
-            await UiOperations.RunAsync(XamlRoot, "Update mods", async (progress, token) =>
-            {
-                foreach (var mod in updates) { token.ThrowIfCancellationRequested(); await ModOperations.InstallCatalogAsync(mod, progress, token); }
-            });
+            await Controller.UninstallAsync(item.Mod);
         }
-        finally { _busy = false; LibraryControls.IsEnabled = true; ApplyFilter(); }
+        finally
+        {
+            _busy = false;
+            LibraryControls.IsEnabled = true;
+            ApplyFilter();
+        }
+    }
+
+    private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_busy || _loading || Controller.IsBusy)
+            return;
+        _busy = true;
+        LibraryControls.IsEnabled = false;
+        try
+        {
+            await Controller.UpdateAllAsync(_catalog?.Mods ?? []);
+        }
+        finally
+        {
+            _busy = false;
+            LibraryControls.IsEnabled = true;
+            ApplyFilter();
+        }
     }
 }

@@ -25,7 +25,12 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <DebugType>embedded</DebugType>
+    <PublishReleaseAfterBuild Condition="'$(PublishReleaseAfterBuild)' == ''">true</PublishReleaseAfterBuild>
+    <ReleaseBundleDirectory Condition="'$(ReleaseBundleDirectory)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', 'artifacts', 'publish'))</ReleaseBundleDirectory>
   </PropertyGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Release' and '$(PublishReleaseAfterBuild)' == 'true'">
+    <UpToDateCheckOutput Include="$(ReleaseBundleDirectory)$(AssemblyName).exe" />
+  </ItemGroup>
   <ItemGroup>
     <Content Remove="Assets\neodash mod loader logo no bg.ico" />
     <Content Remove="Assets\neodash mod loader logo no bg.png" />
@@ -52,6 +57,7 @@
     package has not yet been restored.
   -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
   </ItemGroup>
@@ -96,4 +102,13 @@
           BeforeTargets="CoreCompile"
           DependsOnTargets="DesignTimeMarkupCompilation"
           Condition="'$(DesignTimeBuild)' == 'true' and '$(BuildingInsideVisualStudio)' != 'true'" />
+  <!-- Build keeps the SDK's intermediate files; Release also produces the distributable single EXE. -->
+  <Target Name="PublishReleaseBundleAfterBuild"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release' and '$(PublishReleaseAfterBuild)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(BuildingProject)' == 'true' and '$(IsCrossTargetingBuild)' != 'true' and '$(NoBuild)' != 'true' and '$(_IsPublishing)' != 'true'">
+    <MSBuild Projects="$(MSBuildProjectFullPath)"
+             Targets="Publish"
+             Properties="NoBuild=true;PublishReleaseAfterBuild=false" />
+    <Message Importance="High" Text="Self-contained Release EXE: $(PublishDir)$(AssemblyName).exe" />
+  </Target>
 </Project>

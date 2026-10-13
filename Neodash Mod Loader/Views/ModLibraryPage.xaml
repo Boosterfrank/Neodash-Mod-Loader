@@ -102,10 +102,10 @@
                                     <FontIcon Glyph="&#xE712;" FontSize="16" />
                                     <Button.Flyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="Open mod folder" Click="OpenModFolder_Click" Tag="{x:Bind}" IsEnabled="{x:Bind IsInstalled, Mode=OneWay}"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="Open mod folder" Click="OpenModFolder_Click" Tag="{x:Bind}" IsEnabled="{x:Bind IsInstalled, Mode=OneWay}"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                             <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem Text="Repair / reinstall" Click="InstallButton_Click" Tag="{x:Bind}" Visibility="{x:Bind RepairVisibility, Mode=OneWay}" IsEnabled="{x:Bind CanRepair, Mode=OneWay}" />
-                                            <MenuFlyoutItem Text="Uninstall" Click="UninstallButton_Click" Tag="{x:Bind}" IsEnabled="{x:Bind IsInstalled, Mode=OneWay}" />
+                                            <MenuFlyoutItem Text="Repair / reinstall" Click="InstallButton_Click" Tag="{x:Bind}" Visibility="{x:Bind RepairVisibility, Mode=OneWay}" IsEnabled="{x:Bind CanRepair, Mode=OneWay}"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE90F;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                            <MenuFlyoutItem Text="Uninstall" Click="UninstallButton_Click" Tag="{x:Bind}" IsEnabled="{x:Bind IsInstalled, Mode=OneWay}"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                         </MenuFlyout>
                                     </Button.Flyout>
                                 </Button>

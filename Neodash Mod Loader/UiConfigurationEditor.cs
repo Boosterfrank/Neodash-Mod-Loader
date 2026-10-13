@@ -2,33 +2,21 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
+using Neodash_Mod_Loader.Services;
 
 namespace Neodash_Mod_Loader;
 
-public static class UiConfigurationEditor
+public sealed class UiConfigurationEditor(IConfigurationService configurations, IRuntimeService runtime,
+    IGameService game, IDesktopDialogs dialogs, IAppDiagnostics diagnostics) : IConfigurationEditor
 {
-    public static string[] FindFiles(string gameRoot, string folderRoot)
-    {
-        var files = new List<string>();
-        var directories = new Stack<string>();
-        directories.Push(SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, folderRoot)));
-        while (directories.Count > 0)
-        {
-            foreach (string entry in Directory.EnumerateFileSystemEntries(directories.Pop()))
-            {
-                string safe = SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, entry));
-                if (Directory.Exists(safe)) directories.Push(safe);
-                else if (new[] { ".ini", ".cfg", ".toml", ".json" }.Contains(Path.GetExtension(safe), StringComparer.OrdinalIgnoreCase)) files.Add(safe);
-            }
-        }
-        files.Sort(StringComparer.OrdinalIgnoreCase);
-        return files.ToArray();
-    }
+    public Task EditModAsync(string name) => EditAsync(configurations.GetModConfiguration(name));
+    public Task EditRuntimeAsync() => EditAsync(runtime.GetConfiguration());
 
-    public static async Task EditAsync(XamlRoot xamlRoot, string gameRoot, string folderRoot, IReadOnlyList<string> files)
+    private async Task EditAsync(ConfigurationLocation location)
     {
+        var (gameRoot, folderRoot, files) = location;
         if (files.Count == 0) throw new FileNotFoundException("No configuration files were found.");
-        GameRuntime.EnsureGameClosed(gameRoot);
+        game.EnsureClosed(gameRoot);
         var original = new Dictionary<string, ConfigFileDocument>(StringComparer.OrdinalIgnoreCase);
         var edited = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var picker = new ComboBox { ItemsSource = files.Select(path => Path.GetRelativePath(folderRoot, path)).ToList(), SelectedIndex = 0,
@@ -44,7 +32,7 @@ public static class UiConfigurationEditor
         string? selected = null;
         var content = new StackPanel { Spacing = 10 };
         content.Children.Add(picker); content.Children.Add(editor); content.Children.Add(status);
-        var dialog = new ContentDialog { XamlRoot = xamlRoot, Title = "Edit configuration", Content = content,
+        var dialog = new ContentDialog { Title = "Edit configuration", Content = content,
             PrimaryButtonText = "Save changes", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Primary };
 
         async Task LoadSelectedAsync()
@@ -67,14 +55,14 @@ public static class UiConfigurationEditor
                 dialog.IsPrimaryButtonEnabled = true;
                 status.Text = "Edits are kept when switching files. Save applies all changed files.";
             }
-            catch (Exception ex) { editor.IsEnabled = false; dialog.IsPrimaryButtonEnabled = false; status.Text = ex.Message; AppStorage.Log("Could not open configuration.", ex); }
+            catch (Exception ex) { editor.IsEnabled = false; dialog.IsPrimaryButtonEnabled = false; status.Text = ex.Message; diagnostics.Log("Could not open configuration.", ex); }
             finally { picker.IsEnabled = true; }
         }
         await LoadSelectedAsync();
         picker.SelectionChanged += async (_, _) => await LoadSelectedAsync();
-        if (await UiOperations.ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
+        if (await dialogs.ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
         if (selected is not null) edited[selected] = editor.Text;
-        GameRuntime.EnsureGameClosed(gameRoot);
+        game.EnsureClosed(gameRoot);
         var changes = edited
             .Select(item => new ConfigFileChange(original[item.Key], item.Value))
             .Where(change => !string.Equals(change.Text, change.Document.Text, StringComparison.Ordinal))
@@ -83,6 +71,6 @@ public static class UiConfigurationEditor
             _ = SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, change.Document.Path));
 
         ConfigFileTransactions.Apply(changes);
-        if (changes.Count > 0) AppStorage.Log("Saved configuration: " + string.Join(", ", changes.Select(change => Path.GetFileName(change.Document.Path))));
+        if (changes.Count > 0) diagnostics.Log("Saved configuration: " + string.Join(", ", changes.Select(change => Path.GetFileName(change.Document.Path))));
     }
 }

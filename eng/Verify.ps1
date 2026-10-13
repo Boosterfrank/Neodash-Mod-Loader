@@ -17,6 +17,9 @@ New-Item -ItemType Directory -Path $coverageDirectory -Force | Out-Null
 
 function Invoke-DotnetCheck {
     param([string] $Name, [string[]] $Arguments)
+    if ($Arguments[0] -in @('restore', 'build', 'publish')) {
+        $Arguments += '-bl:' + (Join-Path $logs ($Name + '-{}.binlog'))
+    }
     Write-Host "Running $Name..."
     & dotnet @Arguments 2>&1 | Tee-Object -FilePath (Join-Path $logs "$Name.log")
     if ($LASTEXITCODE -ne 0) { throw "$Name failed with exit code $LASTEXITCODE. See artifacts/logs/$Name.log." }
@@ -37,7 +40,7 @@ try {
     # Resolve deterministic CI PDB paths back to this checkout without excluding missing virtual source paths.
     ('|' + $repository + [IO.Path]::DirectorySeparatorChar + '=/_/') | Set-Content -LiteralPath $coverageMapping
     $testAssembly = Join-Path $repository "tests/Neodash.ModLoader.Integration/bin/$Configuration/net10.0-windows/Neodash.ModLoader.Integration.dll"
-    $testArguments = "test --project tests/Neodash.ModLoader.Integration/Neodash.ModLoader.Integration.csproj --no-build --no-restore -c $Configuration -p:Platform=AnyCPU"
+    $testArguments = "test --project tests/Neodash.ModLoader.Integration/Neodash.ModLoader.Integration.csproj --no-build --no-restore -c $Configuration -p:Platform=AnyCPU -bl:""$(Join-Path $logs 'tests-{}.binlog')"""
     Invoke-DotnetCheck 'tests' @('tool', 'run', 'coverlet', '--', $testAssembly,
         '--target', 'dotnet', '--targetargs', $testArguments,
         '--include', '[Neodash.ModLoader.Integration]*', '--include-test-assembly',

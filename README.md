@@ -152,19 +152,39 @@ For a development build:
 dotnet build 'Neodash Mod Loader.slnx' -c Debug -p:Platform=x64
 ```
 
+For a self-contained Release build:
+
+```powershell
+dotnet build 'Neodash Mod Loader.slnx' -c Release -p:Platform=x64
+```
+
+Release builds automatically publish `artifacts/publish/Neodash Mod Loader.exe`, including the .NET and Windows App SDK runtimes, assets, and native dependencies. Distribute that one file. The DLLs under `bin/` are intermediate build output. Set `-p:PublishReleaseAfterBuild=false` to skip the packaging step when only compiling.
+
 To run the tests alone:
 
 ```powershell
 dotnet test --project 'tests/Neodash.ModLoader.Integration/Neodash.ModLoader.Integration.csproj' -c Release
 ```
 
-The xUnit v3 suite uses Microsoft Testing Platform and isolated child processes. It tests the linked production services with repository-local filesystem fixtures, including installation, uninstall, recovery, profiles, and legacy settings migration. Coverage measures those linked core sources; it excludes the UI and runtime services outside the harness. Tests do not launch WinUI or a real game. See [tests/README.md](tests/README.md) for details.
+The xUnit v3 suite uses Microsoft Testing Platform. Filesystem scenarios run in isolated child processes; application-service tests use injected fakes to check pending edits, navigation decisions, startup routing, and DI lifetimes. Coverage measures the linked production sources; it excludes WinUI and services outside the harness. Tests do not launch WinUI or a real game. See [tests/README.md](tests/README.md) for details.
+
+### Application architecture
+
+`App` builds the standard .NET DI container and creates a scope for the window. Core adapters are shared services; page controllers, pending mod edits, dialogs, file pickers, and navigation belong to that window scope. Container validation checks registrations and scope usage at startup.
+
+Pages keep rendering, bindings, focus, and animation in their code-behind. Controllers coordinate feature actions through interfaces such as `IModWorkspace`, `IProfileService`, and `ISettingsService`. `ModEditSession` owns pending checkbox changes, and `NavigationGuard` supplies the same Save / Discard / Cancel behavior for navigation and closing the window.
+
+WinUI `Frame` still creates pages and handles navigation transitions. `PageActivation` is the single bridge that supplies each framework-created page with its scoped controller. Pages never resolve services from a global container or another page.
+
+`Services/Core/` adapts the existing transaction and persistence managers, retaining their package ownership, path checks, rollback, and legacy settings formats. Add filesystem or settings operations there, expose them through a focused interface, and keep page code free of direct I/O. Register new services in `CoreServiceRegistration` or `DesktopServiceRegistration`; test workflows with injected fakes and persistence changes with the isolated filesystem scenarios.
 
 ### Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `Neodash Mod Loader/Views/` | WinUI pages and interaction logic. |
+| `Neodash Mod Loader/Views/` | WinUI rendering, bindings, focus, and interaction events. |
+| `Neodash Mod Loader/Services/` | DI registrations, feature controllers, navigation, and window-scoped workflows. |
+| `Neodash Mod Loader/Services/Core/` | UI-free adapters for game access, settings, profiles, packages, runtime, and diagnostics. |
 | `Neodash Mod Loader/Models/` | Settings, profiles, catalog entries, and installation records. |
 | `Neodash Mod Loader/*.cs` | Mod operations, package installation, persistence, and recovery services. |
 | `tests/Neodash.ModLoader.Integration/` | Regression scenarios, shared fixtures, and the isolated test host. |

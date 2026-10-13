@@ -4,7 +4,7 @@ namespace Neodash_Mod_Loader;
 
 public static class AppStorage
 {
-    private static readonly object LogLock = new();
+    private static readonly Lock LogLock = new();
     public static string DirectoryPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Neodash Mod Loader");
     public static string BackupsPath => Path.Combine(DirectoryPath, "Backups");

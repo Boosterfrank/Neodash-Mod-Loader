@@ -1,68 +1,46 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Neodash_Mod_Loader.Services;
 
-namespace Neodash_Mod_Loader
+namespace Neodash_Mod_Loader;
+
+public partial class App : Application
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    public partial class App : Application
+    private readonly ServiceProvider _services;
+    private readonly IAppDiagnostics _diagnostics;
+    private IServiceScope? _windowScope;
+    private Window? _mainWindow;
+    public App()
     {
+        InitializeComponent();
+        _services = DesktopServiceRegistration.BuildServices();
+        _diagnostics = _services.GetRequiredService<IAppDiagnostics>();
+        UnhandledException += App_UnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+    }
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            InitializeComponent();
-            this.UnhandledException += App_UnhandledException;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-        }
+    private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e) => _diagnostics.LogCrash(e.Exception);
+    private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception exception)
+            _diagnostics.LogCrash(exception);
+    }
 
-        private static void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
-        {
-            LogCrash(e.Exception);
-        }
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        _windowScope = _services.CreateScope();
+        _mainWindow = _windowScope.ServiceProvider.GetRequiredService<MainWindow>();
+        _mainWindow.Closed += MainWindow_Closed;
+        _mainWindow.Activate();
+    }
 
-        private static void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
-        {
-            if (e.ExceptionObject is Exception ex)
-            {
-                LogCrash(ex);
-            }
-        }
-
-        private static void LogCrash(Exception ex)
-        {
-            try
-            {
-                string logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Neodash Mod Loader");
-                Directory.CreateDirectory(logDirectory);
-                string logPath = Path.Combine(logDirectory, "crash.txt");
-                File.AppendAllText(logPath, $"[{DateTime.Now}] {ex.Message}\n{ex.StackTrace}\n\n");
-            }
-            catch
-            {
-                // Crash logging is best effort: a logging failure must not replace the original unhandled exception.
-            }
-        }
-
-        private static Window? _mainWindow;
-        public static Window MainWindow => _mainWindow ?? throw new InvalidOperationException("The main window has not been created yet.");
-
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
-        {
-            LaunchMainWindow();
-        }
-
-        private static void LaunchMainWindow()
-        {
-            _mainWindow = new MainWindow();
-            _mainWindow.Activate();
-        }
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
+        UnhandledException -= App_UnhandledException;
+        _windowScope?.Dispose();
+        _windowScope = null;
+        _mainWindow = null;
+        _services.Dispose();
     }
 }

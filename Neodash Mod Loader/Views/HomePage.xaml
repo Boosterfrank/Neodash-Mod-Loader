@@ -63,12 +63,12 @@
                     <FontIcon Glyph="&#xE712;" FontSize="16" />
                     <Button.Flyout>
                         <MenuFlyout>
-                            <MenuFlyoutItem Text="New profile…" Click="NewProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE710;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Rename profile…" Click="RenameProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8AC;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
-                            <MenuFlyoutItem x:Name="DeleteProfileButton" Text="Delete profile…" Click="DeleteProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="New profile…" Click="NewProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE710;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Rename profile…" Click="RenameProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8AC;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="DeleteProfileButton" Text="Delete profile…" Click="DeleteProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                             <MenuFlyoutSeparator />
-                            <MenuFlyoutItem Text="Import profile…" Click="ImportProfileButton_Click" />
-                            <MenuFlyoutItem Text="Export profile…" Click="ExportProfileButton_Click" />
+                            <MenuFlyoutItem Text="Import profile…" Click="ImportProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8B5;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Export profile…" Click="ExportProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xEDE1;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
@@ -86,8 +86,8 @@
                             <Button Content="Install…">
                                 <Button.Flyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="Install ZIP…" Click="InstallZipButton_Click" />
-                                        <MenuFlyoutItem Text="Import folder…" Click="ImportFolderButton_Click" />
+                                        <MenuFlyoutItem Text="Install ZIP…" Click="InstallZipButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE896;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Import folder…" Click="ImportFolderButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8B5;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
@@ -107,8 +107,8 @@
                         <Button x:Name="BulkTools" Grid.Column="2" Content="Bulk actions" VerticalAlignment="Center">
                             <Button.Flyout>
                                 <MenuFlyout>
-                                    <MenuFlyoutItem Text="Enable all shown" Click="EnableAllShown_Click" />
-                                    <MenuFlyoutItem Text="Disable all shown" Click="DisableAllShown_Click" />
+                                    <MenuFlyoutItem Text="Enable all shown" Click="EnableAllShown_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE73E;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="Disable all shown" Click="DisableAllShown_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE739;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                 </MenuFlyout>
                             </Button.Flyout>
                         </Button>
@@ -140,21 +140,21 @@
                                         </Grid.ColumnDefinitions>
                                         <CheckBox AutomationProperties.Name="{x:Bind Name}" AutomationProperties.HelpText="Enable or disable this mod, then save changes." IsChecked="{x:Bind IsEnabled, Mode=TwoWay}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="32" MinHeight="32" />
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
-                                            <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" TextTrimming="CharacterEllipsis" FontWeight="{x:Bind FontWeight}" FontSize="14" />
+                                            <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" />
                                             <TextBlock Text="{x:Bind ManagedVersion}" Visibility="{x:Bind ManagedVersionVisibility}" ToolTipService.ToolTip="{x:Bind ManagedVersion}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                         </StackPanel>
                                         <TextBlock Grid.Column="2" Text="{x:Bind EntryPointPath, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind EntryPointPath, Mode=OneWay}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                        <Button Grid.Column="3" MinWidth="40" MinHeight="32" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Mod actions" AutomationProperties.HelpText="{x:Bind Name}" ToolTipService.ToolTip="Mod actions">
+                                        <Button Grid.Column="3" MinWidth="40" MinHeight="32" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Mod actions" AutomationProperties.HelpText="{x:Bind Name}" ToolTipService.ToolTip="Mod actions" Loaded="ModActionsButton_Loaded">
                                             <FontIcon Glyph="&#xE712;" FontSize="16" />
                                             <Button.Flyout>
                                                 <MenuFlyout>
-                                                    <MenuFlyoutItem Text="Open mod folder" Tag="{x:Bind Name}" Click="OpenModFolder_Click" />
-                                                    <MenuFlyoutItem Text="Edit configuration" Tag="{x:Bind Name}" Click="EditConfiguration_Click" />
+                                                    <MenuFlyoutItem Text="Open mod folder" Tag="{x:Bind Name}" Click="OpenModFolder_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                                    <MenuFlyoutItem x:Name="EditConfigurationItem" Text="Edit configuration" Tag="{x:Bind Name}" IsEnabled="False" Click="EditConfiguration_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE713;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                                     <MenuFlyoutSeparator />
-                                                    <MenuFlyoutItem Text="Repair / reinstall" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRepair}" Click="RepairMod_Click" />
-                                                    <MenuFlyoutItem Text="Restore last update backup" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRestore}" Click="RestoreMod_Click" />
+                                                    <MenuFlyoutItem Text="Repair / reinstall" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRepair}" Click="RepairMod_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE90F;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                                                    <MenuFlyoutItem Text="Restore last update backup" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRestore}" Click="RestoreMod_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE81C;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                                     <MenuFlyoutSeparator />
-                                                    <MenuFlyoutItem Text="Uninstall" Tag="{x:Bind Name}" Click="UninstallMod_Click" />
+                                                    <MenuFlyoutItem Text="Uninstall" Tag="{x:Bind Name}" Click="UninstallMod_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" FontSize="16" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
                                                 </MenuFlyout>
                                             </Button.Flyout>
                                         </Button>

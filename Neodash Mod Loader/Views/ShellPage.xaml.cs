@@ -1,97 +1,66 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Neodash_Mod_Loader.Services;
 
-namespace Neodash_Mod_Loader.Views
+namespace Neodash_Mod_Loader.Views;
+
+public sealed partial class ShellPage : Page
 {
-    public sealed partial class ShellPage : Page
+    private ShellController? _controller;
+    private bool _isHandlingSelection;
+    private NavigationViewItem? _lastItem;
+    public ShellPage()
     {
-        public ShellPage()
-        {
-            this.InitializeComponent();
-            this.Loaded += ShellPage_Loaded;
-        }
+        InitializeComponent();
+        Loaded += ShellPage_Loaded;
+    }
 
-        private void ShellPage_Loaded(object sender, RoutedEventArgs e)
-        {
-            NavView.SelectedItem = GamePathResolver.GetNeodashWin64Path().Length > 0 ? NavView.MenuItems[0] : NavView.FooterMenuItems[0];
-        }
+    internal void Activate(ShellController controller)
+    {
+        _controller = controller;
+        controller.Attach(ContentFrame);
+        if (IsLoaded)
+            SelectInitialPage();
+    }
 
-        private bool _isHandlingSelection;
-        private NavigationViewItem? _lastItem;
+    private void ShellPage_Loaded(object sender, RoutedEventArgs e) => SelectInitialPage();
+    private void SelectInitialPage()
+    {
+        if (_controller is null || _lastItem is not null)
+            return;
+        NavView.SelectedItem = _controller.InitialPage == AppPage.Home ? NavView.MenuItems[0] : NavView.FooterMenuItems[0];
+    }
 
-        private async void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private async void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (_isHandlingSelection || _controller is null)
+            return;
+        _isHandlingSelection = true;
+        try
         {
-            if (_isHandlingSelection) return;
-            if (ModOperations.IsBusy || UiOperations.IsDialogOpen)
+            if (_controller.IsBlocked || !await _controller.CanLeaveAsync())
             {
-                _isHandlingSelection = true;
-                if (_lastItem is not null) NavView.SelectedItem = _lastItem;
-                _isHandlingSelection = false;
+                NavView.SelectedItem = _lastItem;
                 return;
             }
 
-            if (HomePage.Current != null && HomePage.Current.HasUnsavedChanges)
-            {
-                _isHandlingSelection = true;
-                
-                var dialog = new ContentDialog
-                {
-                    Title = "Unsaved Changes",
-                    Content = "You have unsaved mod changes. Would you like to save them before leaving?",
-                    PrimaryButtonText = "Save",
-                    SecondaryButtonText = "Discard",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
-                
-                var result = await UiOperations.ShowDialogAsync(dialog);
-                
-                if (result == ContentDialogResult.Secondary)
-                {
-                    HomePage.Current.DiscardChanges();
-                }
-                else if (result == ContentDialogResult.None || !await HomePage.Current.SaveModsAsync())
-                {
-                    // Cancelled, or the save failed: stay on Home so the pending changes aren't lost.
-                    if (_lastItem != null)
-                    {
-                        NavView.SelectedItem = _lastItem;
-                    }
-                    _isHandlingSelection = false;
-                    return;
-                }
-                
-                _isHandlingSelection = false;
-            }
-
-            NavigateToSelectedPage(args);
-        }
-
-        private void NavigateToSelectedPage(NavigationViewSelectionChangedEventArgs args)
-        {
-            _lastItem = args.SelectedItem as NavigationViewItem;
-
-            if (args.IsSettingsSelected)
-            {
-                ContentFrame.Navigate(typeof(SettingsPage));
+            if (args.SelectedItem is not NavigationViewItem item)
                 return;
-            }
-
-            if (args.SelectedItem is NavigationViewItem item)
+            AppPage? destination = item.Tag switch
             {
-                switch (item.Tag)
-                {
-                    case "Home":
-                        ContentFrame.Navigate(typeof(HomePage));
-                        break;
-                    case "ModLibrary":
-                        ContentFrame.Navigate(typeof(ModLibraryPage));
-                        break;
-                    case "Settings":
-                        ContentFrame.Navigate(typeof(SettingsPage));
-                        break;
-                }
-            }
+                "Home" => AppPage.Home,
+                "ModLibrary" => AppPage.ModLibrary,
+                "Settings" => AppPage.Settings,
+                _ => null
+            };
+            if (destination is null)
+                return;
+            _controller.Navigate(destination.Value);
+            _lastItem = item;
+        }
+        finally
+        {
+            _isHandlingSelection = false;
         }
     }
 }
