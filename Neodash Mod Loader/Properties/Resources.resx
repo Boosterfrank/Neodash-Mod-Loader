@@ -98,4 +98,19 @@
 	<resheader name="writer">
 		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</resheader>
+	<data name="NeodashLaunchUri" xml:space="preserve">
+		<value>steam://rungameid/1514950</value>
+	</data>
+	<data name="UE4SSDownloadUrl" xml:space="preserve">
+		<value>https://www.dropbox.com/scl/fi/ewqe9uccnmeffxdsdc4v1/Win64Data.zip?rlkey=f7n9doxpzkgoocwdwo5ot8b9j&amp;st=g5vf5z3s&amp;dl=1</value>
+	</data>
+	<data name="ModLoaderVersionUrl" xml:space="preserve">
+		<value>https://neodashweb.pages.dev/modloader/download/ver.txt</value>
+	</data>
+	<data name="ModLoaderDownloadUrl" xml:space="preserve">
+		<value>https://www.dropbox.com/scl/fi/6jdl7r2yg9m3c9fkc6tgm/ModLoaderSetup.exe?rlkey=ovtja9dcb5qp6gy1nyj28u9pu&amp;st=fe6z5awc&amp;dl=1</value>
+	</data>
+	<data name="ModLibraryUrl" xml:space="preserve">
+		<value>https://neodashweb.pages.dev/modloader/mods/modlist.json</value>
+	</data>
 </root>

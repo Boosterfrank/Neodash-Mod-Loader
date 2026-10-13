@@ -1,23 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace Neodash_Mod_Loader
 {
@@ -38,12 +19,12 @@ namespace Neodash_Mod_Loader
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
-        private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+        private static void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
             LogCrash(e.Exception);
         }
 
-        private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+        private static void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
         {
             if (e.ExceptionObject is Exception ex)
             {
@@ -51,18 +32,23 @@ namespace Neodash_Mod_Loader
             }
         }
 
-        private void LogCrash(Exception ex)
+        private static void LogCrash(Exception ex)
         {
             try
             {
-                string logPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Neodash Mod Loader", "crash.txt");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath));
-                System.IO.File.AppendAllText(logPath, $"[{DateTime.Now}] {ex.Message}\n{ex.StackTrace}\n\n");
+                string logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Neodash Mod Loader");
+                Directory.CreateDirectory(logDirectory);
+                string logPath = Path.Combine(logDirectory, "crash.txt");
+                File.AppendAllText(logPath, $"[{DateTime.Now}] {ex.Message}\n{ex.StackTrace}\n\n");
             }
-            catch { }
+            catch
+            {
+                // Crash logging is best effort: a logging failure must not replace the original unhandled exception.
+            }
         }
 
-        public static Window MainWindow { get; private set; }
+        private static Window? _mainWindow;
+        public static Window MainWindow => _mainWindow ?? throw new InvalidOperationException("The main window has not been created yet.");
 
         /// <summary>
         /// Invoked when the application is launched.
@@ -70,8 +56,13 @@ namespace Neodash_Mod_Loader
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            MainWindow = new MainWindow();
-            MainWindow.Activate();
+            LaunchMainWindow();
+        }
+
+        private static void LaunchMainWindow()
+        {
+            _mainWindow = new MainWindow();
+            _mainWindow.Activate();
         }
     }
 }

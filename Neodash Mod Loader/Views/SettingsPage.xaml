@@ -8,9 +8,67 @@
     mc:Ignorable="d"
     Background="Transparent">
 
-    <ScrollViewer Padding="24">
+    <ScrollViewer Padding="16,12,16,16" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Spacing="16">
-            <TextBlock Text="Settings" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,0,0,16"/>
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="NarrowSettings">
+                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="GameFolderActions.Orientation" Value="Vertical" />
+                            <Setter Target="Ue4ssActions.Orientation" Value="Vertical" />
+                            <Setter Target="DiagnosticActions.Orientation" Value="Vertical" />
+                            <Setter Target="RecoveryActions.Orientation" Value="Vertical" />
+                            <Setter Target="ThemeComboBox.(Grid.Row)" Value="1" />
+                            <Setter Target="ThemeComboBox.(Grid.Column)" Value="0" />
+                            <Setter Target="ThemeComboBox.(Grid.ColumnSpan)" Value="3" />
+                            <Setter Target="ThemeComboBox.HorizontalAlignment" Value="Left" />
+                            <Setter Target="ThemeComboBox.Margin" Value="0,12,0,0" />
+                            <Setter Target="RunSetupButton.(Grid.Row)" Value="1" />
+                            <Setter Target="RunSetupButton.(Grid.Column)" Value="0" />
+                            <Setter Target="RunSetupButton.(Grid.ColumnSpan)" Value="3" />
+                            <Setter Target="RunSetupButton.HorizontalAlignment" Value="Left" />
+                            <Setter Target="RunSetupButton.Margin" Value="0,12,0,0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideSettings"><VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="900" /></VisualState.StateTriggers></VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+            <TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold" />
+            <InfoBar x:Name="SettingsRecoveryBar" Title="Settings could not be loaded" Severity="Error" IsClosable="False" IsOpen="False">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Name="SettingsErrorText" AutomationProperties.LiveSetting="Polite" TextWrapping="Wrap" />
+                    <TextBlock Text="Your settings file is preserved. Correct the file, then retry loading it." TextWrapping="Wrap" />
+                    <StackPanel x:Name="RecoveryActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
+                        <Button Content="Open settings folder" Tag="settings" Click="OpenPathButton_Click" />
+                        <Button Content="Retry loading" Click="RetrySettingsButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </InfoBar>
+            <ContentControl x:Name="SettingsControls" HorizontalContentAlignment="Stretch">
+            <StackPanel Spacing="16">
+            <TextBlock Text="Neodash installation" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+            <TextBlock x:Name="GamePathText" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+            <StackPanel x:Name="GameFolderActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
+                <Button Content="Choose game folder" Click="ChooseGameButton_Click" />
+                <Button Content="Detect through Steam" Click="DetectGameButton_Click" />
+                <Button x:Name="OpenGameFolderButton" Content="Open game folder" Tag="folder" Click="OpenPathButton_Click" />
+            </StackPanel>
+            <TextBlock Text="UE4SS" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0" />
+            <TextBlock x:Name="Ue4ssStatusText" TextWrapping="Wrap" />
+            <StackPanel x:Name="Ue4ssActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
+                <Button x:Name="InstallUe4ssButton" Content="Install / update / repair" Click="InstallUe4ssButton_Click" />
+                <Button x:Name="RemoveUe4ssButton" Content="Remove UE4SS" Click="UninstallUe4ssButton_Click" />
+                <Button x:Name="EditUe4ssConfigButton" Content="Edit UE4SS configuration" Click="EditUe4ssConfigButton_Click" />
+            </StackPanel>
+            <TextBlock Text="Diagnostics and recovery" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0" />
+            <StackPanel x:Name="DiagnosticActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
+                <Button Content="Operation log" Click="OpenPathButton_Click" Tag="operations" />
+                <Button x:Name="Ue4ssLogButton" Content="UE4SS log" Click="OpenPathButton_Click" Tag="ue4ss" />
+                <Button Content="Crash log" Click="OpenPathButton_Click" Tag="crash" />
+                <Button Content="Update backups" Click="OpenPathButton_Click" Tag="backups" />
+                <Button Content="Settings folder" Click="OpenPathButton_Click" Tag="settings" />
+            </StackPanel>
             
             <TextBlock Text="Appearance &amp; behavior" Style="{ThemeResource BodyStrongTextBlockStyle}"/>
             
@@ -20,20 +78,21 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <FontIcon Glyph="&#xE790;" FontSize="20" VerticalAlignment="Center" Margin="0,0,16,0" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="App theme" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="SemiBold" />
-                    <TextBlock Text="Select which app theme to display" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="Select which app theme to display" TextWrapping="Wrap" Margin="0,0,16,0" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
                 
-                <ComboBox Grid.Column="2" x:Name="ThemeComboBox" Width="150" SelectionChanged="ThemeComboBox_SelectionChanged" VerticalAlignment="Center">
+                <ComboBox Grid.Column="2" x:Name="ThemeComboBox" AutomationProperties.Name="App theme" Width="150" SelectionChanged="ThemeComboBox_SelectionChanged" VerticalAlignment="Center">
                     <ComboBoxItem Content="Light" Tag="Light" />
                     <ComboBoxItem Content="Dark" Tag="Dark" />
                     <ComboBoxItem Content="Default" Tag="Default" />
                 </ComboBox>
             </Grid>
             
-            <TextBlock Text="Developer options" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0"/>
+            <TextBlock Text="Setup" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0"/>
             
             <Grid Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
                 <Grid.ColumnDefinitions>
@@ -41,13 +100,14 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE7BA;" FontSize="20" VerticalAlignment="Center" Margin="0,0,16,0" Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                <FontIcon Glyph="&#xE713;" FontSize="20" VerticalAlignment="Center" Margin="0,0,16,0"/>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Reset App" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="SemiBold" Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
-                    <TextBlock Text="(Devs only) Reset onboarding state and clear settings." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="Run setup again" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="SemiBold"/>
+                    <TextBlock Text="Show onboarding again. Existing mods, profiles, and settings are kept." TextWrapping="Wrap" Margin="0,0,16,0" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
                 
-                <Button Grid.Column="2" Content="Reset" Click="ResetAppButton_Click" VerticalAlignment="Center" />
+                <Button x:Name="RunSetupButton" Grid.Column="2" Content="Run setup" Click="ResetAppButton_Click" VerticalAlignment="Center" />
             </Grid>
 
             <TextBlock Text="About" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0"/>
@@ -60,10 +120,13 @@
                 <Image Source="/Assets/StoreLogo.png" Width="64" Height="64" Margin="0,0,16,0" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Neodash Mod Loader" Style="{ThemeResource BodyTextBlockStyle}" FontWeight="Bold" FontSize="18" />
-                    <TextBlock Text="Version 1.3.0" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
+                    <TextBlock x:Name="AppVersionText" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
+                    <Button x:Name="CheckUpdatesButton" Content="Check for updates" Margin="0,8,0,0" />
                     <TextBlock Text="A simple and elegant mod loader for Neodash." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" />
                 </StackPanel>
             </Grid>
+            </StackPanel>
+            </ContentControl>
         </StackPanel>
     </ScrollViewer>
 </Page>

@@ -7,7 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="Neodash Mod Loader">
+    Title="Neodash Mod Loader"
+    Activated="MainWindow_Activated">
 
     <Window.SystemBackdrop>
         <MicaBackdrop Kind="BaseAlt" />
@@ -20,11 +21,18 @@
         </Grid.RowDefinitions>
 
         <!-- Dark Tint Overlay behind UI -->
-        <Border Grid.RowSpan="2" Background="#60000000" IsHitTestVisible="False" />
+        <Border x:Name="BackdropTint" Grid.RowSpan="2" Background="#60000000" IsHitTestVisible="False" />
 
         <!-- Custom Title Bar -->
-        <Grid x:Name="AppTitleBar" Height="32" Background="Transparent" Grid.Row="0">
-            <!-- App Window Titlebar, transparent so Acrylic shows -->
+        <Grid x:Name="AppTitleBar" Height="32" Background="Transparent" Grid.Row="0" SizeChanged="AppTitleBar_SizeChanged">
+            <Image x:Name="TitleBarIcon" Source="/Assets/neodash mod loader logo no bg.png" Width="20" Height="20" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" AutomationProperties.Name="Neodash Mod Loader" />
+            <Grid x:Name="CenteredTitle" Margin="156,0" IsHitTestVisible="False">
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock x:Name="TitleBarVersionText" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Grid>
+            </Grid>
         </Grid>
 
         <!-- Main Content Area: Will hold either Onboarding OR NavigationView -->

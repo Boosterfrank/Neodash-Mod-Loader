@@ -8,105 +8,182 @@
     mc:Ignorable="d"
     Background="Transparent">
 
-    <Grid Padding="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Grid Padding="16,12,16,16" RowSpacing="12">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="HeaderLayout">
+                <VisualState x:Name="NarrowHeader">
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ProfileTools.(Grid.Row)" Value="1" />
+                        <Setter Target="ProfileTools.(Grid.Column)" Value="0" />
+                        <Setter Target="ProfileTools.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="ProfileTools.HorizontalAlignment" Value="Left" />
+                        <Setter Target="ProfileTools.Margin" Value="0,8,0,0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideHeader">
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="760" /></VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="ToolbarLayout">
+                <VisualState x:Name="NarrowToolbar">
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SearchTools.(Grid.Row)" Value="1" />
+                        <Setter Target="SearchTools.(Grid.Column)" Value="0" />
+                        <Setter Target="SearchTools.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="SearchTools.Margin" Value="0,8,0,0" />
+                        <Setter Target="BulkTools.(Grid.Row)" Value="1" />
+                        <Setter Target="BulkTools.Margin" Value="0,8,0,0" />
+                        <Setter Target="FooterWarning.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="FooterActions.(Grid.Row)" Value="1" />
+                        <Setter Target="FooterActions.(Grid.Column)" Value="0" />
+                        <Setter Target="FooterActions.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="FooterActions.Margin" Value="0,8,0,0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideToolbar">
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="1000" /></VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
 
-        <Grid>
-            <!-- Big Header -->
-            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,-64,0,-64">
-                <Image Source="/Assets/game_logo.png" Width="300" Height="300" />
-                <TextBlock Text="Mod Loader" FontSize="42" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0, 0,10" />
+        <Grid ColumnSpacing="24">
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <Image Source="/Assets/game_logo.png" Width="88" Height="30" AutomationProperties.Name="Neodash" />
+                <TextBlock Text="Mod Loader" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" />
             </StackPanel>
-
-            <!-- Mod Profiles -->
-            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBlock Text="Profile" FontSize="16" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <ComboBox x:Name="ProfileComboBox" MinWidth="200" VerticalAlignment="Center" SelectionChanged="ProfileComboBox_SelectionChanged" />
-                <Button x:Name="NewProfileButton" Content="&#xE710;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="New Profile" Click="NewProfileButton_Click" />
-                <Button x:Name="RenameProfileButton" Content="&#xE8AC;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Rename Profile" Click="RenameProfileButton_Click" />
-                <Button x:Name="DeleteProfileButton" Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Delete Profile" Click="DeleteProfileButton_Click" />
+            <StackPanel x:Name="ProfileTools" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <TextBlock Text="Profile" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <ComboBox x:Name="ProfileComboBox" Width="200" VerticalAlignment="Center" AutomationProperties.Name="Active mod profile" SelectionChanged="ProfileComboBox_SelectionChanged" />
+                <Button AutomationProperties.Name="Profile actions" ToolTipService.ToolTip="Profile actions" MinWidth="40" MinHeight="32">
+                    <FontIcon Glyph="&#xE712;" FontSize="16" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="New profile…" Click="NewProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE710;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Rename profile…" Click="RenameProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8AC;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="DeleteProfileButton" Text="Delete profile…" Click="DeleteProfileButton_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon></MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem Text="Import profile…" Click="ImportProfileButton_Click" />
+                            <MenuFlyoutItem Text="Export profile…" Click="ExportProfileButton_Click" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
         </Grid>
 
-        <!-- Two Columns -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="24" /> <!-- Gutter -->
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <!-- UE4SS Mods -->
-            <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                
-                <Grid Margin="0,0,0,12">
-                    <TextBlock Text="UE4SS Mods" FontSize="24" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button x:Name="FolderButton" Content="&#xE838;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Open Win64 Folder" Click="FolderButton_Click" />
-                        <Button x:Name="RefreshButton" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" ToolTipService.ToolTip="Refresh" Click="RefreshButton_Click" />
-                        <Button x:Name="SaveButton" Content="Save Changes" IsEnabled="False" Style="{ThemeResource AccentButtonStyle}" Click="SaveButton_Click" />
-                        <Button x:Name="LaunchButton" Content="Launch Neodash" Click="LaunchButton_Click" />
-                    </StackPanel>
-                </Grid>
-                
-                <Grid Grid.Row="1" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource LayerFillColorDefaultBrush}" Padding="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    
-                    <Grid Padding="16,8,16,8" Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="3*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="NAME" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                        <TextBlock Grid.Column="1" Text="ENABLED" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Column="2" Text="FOLDER NAME" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        <TabView x:Name="ModTypeTabs" Grid.Row="1" TabWidthMode="SizeToContent" IsAddTabButtonVisible="False" CanDragTabs="False" CanReorderTabs="False" AllowDropTabs="False" AutomationProperties.Name="Mod types">
+            <TabViewItem Header="UE4SS mods" IsClosable="False">
+                <Grid Padding="0,12,0,0" RowSpacing="12" Loaded="ModTabContent_Loaded">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <Grid ColumnSpacing="12">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button Content="Install…">
+                                <Button.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem Text="Install ZIP…" Click="InstallZipButton_Click" />
+                                        <MenuFlyoutItem Text="Import folder…" Click="ImportFolderButton_Click" />
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Button x:Name="FolderButton" MinWidth="40" MinHeight="32" AutomationProperties.Name="Open Win64 folder" ToolTipService.ToolTip="Open Win64 folder" Click="FolderButton_Click"><FontIcon Glyph="&#xE838;" FontSize="16" /></Button>
+                            <Button x:Name="RefreshButton" MinWidth="40" MinHeight="32" AutomationProperties.Name="Refresh installed mods" ToolTipService.ToolTip="Refresh (F5)" Click="RefreshButton_Click">
+                                <FontIcon Glyph="&#xE72C;" FontSize="16" />
+                                <Button.KeyboardAccelerators><KeyboardAccelerator Key="F5" /></Button.KeyboardAccelerators>
+                            </Button>
+                        </StackPanel>
+                        <Grid x:Name="SearchTools" Grid.Column="1" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="132" /></Grid.ColumnDefinitions>
+                            <TextBox x:Name="ModSearchBox" AutomationProperties.Name="Search installed mods" PlaceholderText="Search installed mods" TextChanged="ModSearchBox_TextChanged" />
+                            <ComboBox x:Name="ModFilterComboBox" Grid.Column="1" HorizontalAlignment="Stretch" AutomationProperties.Name="Filter installed mods" SelectionChanged="ModFilterComboBox_SelectionChanged" SelectedIndex="0">
+                                <x:String>All mods</x:String><x:String>Enabled</x:String><x:String>Disabled</x:String>
+                            </ComboBox>
+                        </Grid>
+                        <Button x:Name="BulkTools" Grid.Column="2" Content="Bulk actions" VerticalAlignment="Center">
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Enable all shown" Click="EnableAllShown_Click" />
+                                    <MenuFlyoutItem Text="Disable all shown" Click="DisableAllShown_Click" />
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
                     </Grid>
 
-                    <ScrollViewer Grid.Row="1">
-                        <ListView ItemsSource="{x:Bind Mods, Mode=OneWay}" SelectionMode="None" Background="Transparent">
+                    <Grid Grid.Row="1" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                        <Grid Padding="12,10" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="Auto" MinWidth="48" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Enabled" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Mod" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Column="2" Text="Entry point" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </Grid>
+                        <ListView x:Name="InstalledModsList" Grid.Row="1" Padding="0" AutomationProperties.Name="Installed UE4SS mods" ItemsSource="{x:Bind FilteredMods, Mode=OneWay}" SelectionMode="None" Background="Transparent" AllowDrop="True" Drop="ModList_Drop">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="local:ModItem">
-                                    <Grid Padding="16,12" Margin="0,2" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="4" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                    <Grid Padding="12,8" MinHeight="56" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="3*" />
+                                            <ColumnDefinition Width="80" /><ColumnDefinition Width="2*" /><ColumnDefinition Width="3*" /><ColumnDefinition Width="Auto" MinWidth="48" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{x:Bind Name}" FontWeight="{x:Bind FontWeight}" FontSize="14" VerticalAlignment="Center" />
-                                        <CheckBox Grid.Column="1" IsChecked="{x:Bind IsEnabled, Mode=TwoWay}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="0" MinHeight="0" />
-                                        <TextBlock Grid.Column="2" Text="{x:Bind ScriptPath, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        <CheckBox AutomationProperties.Name="{x:Bind Name}" AutomationProperties.HelpText="Enable or disable this mod, then save changes." IsChecked="{x:Bind IsEnabled, Mode=TwoWay}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="32" MinHeight="32" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                            <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" TextTrimming="CharacterEllipsis" FontWeight="{x:Bind FontWeight}" FontSize="14" />
+                                            <TextBlock Text="{x:Bind ManagedVersion}" Visibility="{x:Bind ManagedVersionVisibility}" ToolTipService.ToolTip="{x:Bind ManagedVersion}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{x:Bind EntryPointPath, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind EntryPointPath, Mode=OneWay}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                        <Button Grid.Column="3" MinWidth="40" MinHeight="32" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Mod actions" AutomationProperties.HelpText="{x:Bind Name}" ToolTipService.ToolTip="Mod actions">
+                                            <FontIcon Glyph="&#xE712;" FontSize="16" />
+                                            <Button.Flyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem Text="Open mod folder" Tag="{x:Bind Name}" Click="OpenModFolder_Click" />
+                                                    <MenuFlyoutItem Text="Edit configuration" Tag="{x:Bind Name}" Click="EditConfiguration_Click" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem Text="Repair / reinstall" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRepair}" Click="RepairMod_Click" />
+                                                    <MenuFlyoutItem Text="Restore last update backup" Tag="{x:Bind Name}" IsEnabled="{x:Bind CanRestore}" Click="RestoreMod_Click" />
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem Text="Uninstall" Tag="{x:Bind Name}" Click="UninstallMod_Click" />
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
-                    </ScrollViewer>
-                    <TextBlock x:Name="NoModsText" Grid.Row="1" Text="No mods found." HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed" />
-                </Grid>
-            </Grid>
+                        <TextBlock x:Name="NoModsText" Grid.Row="1" Text="No mods found." TextWrapping="Wrap" TextAlignment="Center" MaxWidth="420" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed" />
+                    </Grid>
 
-            <!-- Pak Mods -->
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <TextBlock Text="Pak Mods" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,12" />
-                
-                <Grid Grid.Row="1" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource LayerFillColorDefaultBrush}" Padding="8">
-                    <TextBlock Text="Coming soon..." HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Grid Grid.Row="2" ColumnSpacing="8">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock x:Name="FooterWarning" Text="Close Neodash before installing, changing, repairing, or removing mods." FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        <StackPanel x:Name="FooterActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                            <Button x:Name="SaveButton" Content="Save changes" IsEnabled="False" Style="{ThemeResource AccentButtonStyle}" Click="SaveButton_Click">
+                                <Button.KeyboardAccelerators><KeyboardAccelerator Key="S" Modifiers="Control" /></Button.KeyboardAccelerators>
+                            </Button>
+                            <Button x:Name="LaunchButton" Content="Launch Neodash" Click="LaunchButton_Click" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </Grid>
+            </TabViewItem>
+            <TabViewItem Header="PAK mods" IsClosable="False">
+                <StackPanel MaxWidth="420" Spacing="8" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Loaded="ModTabContent_Loaded">
+                    <TextBlock Text="PAK mods" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                    <TextBlock Text="Coming soon" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextAlignment="Center" />
+                </StackPanel>
+            </TabViewItem>
+        </TabView>
     </Grid>
 </Page>

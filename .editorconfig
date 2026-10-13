@@ -1,0 +1,3 @@
+[*.cs]
+# Keep explicit loops instead of suggesting LINQ rewrites.
+dotnet_diagnostic.S3267.severity = none

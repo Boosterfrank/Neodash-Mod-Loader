@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.2" />
+    <Compile Include="..\..\Neodash Mod Loader\ModManager.cs" Link="Production\ModManager.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ModEntryPoints.cs" Link="Production\ModEntryPoints.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ModPackageInstaller.cs" Link="Production\ModPackageInstaller.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ModVersion.cs" Link="Production\ModVersion.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\AppJsonContext.cs" Link="Production\AppJsonContext.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ModOperations.cs" Link="Production\ModOperations.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ModStateTransactions.cs" Link="Production\ModStateTransactions.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\SettingsManager.cs" Link="Production\SettingsManager.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\SettingsMigration.cs" Link="Production\SettingsMigration.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Ue4ssService.cs" Link="Production\Ue4ssService.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ProfileManager.cs" Link="Production\ProfileManager.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\GamePathResolver.cs" Link="Production\GamePathResolver.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\GameProcessMatcher.cs" Link="Production\GameProcessMatcher.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\SafePaths.cs" Link="Production\SafePaths.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ConfigFileDocument.cs" Link="Production\ConfigFileDocument.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ConfigFileTransactions.cs" Link="Production\ConfigFileTransactions.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\AtomicFile.cs" Link="Production\AtomicFile.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\FileSystemRetry.cs" Link="Production\FileSystemRetry.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Models\AppSettings.cs" Link="Production\Models\AppSettings.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Models\InstalledModRecord.cs" Link="Production\Models\InstalledModRecord.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Models\ModInstallResult.cs" Link="Production\Models\ModInstallResult.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Models\ModLibraryData.cs" Link="Production\Models\ModLibraryData.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Models\ModProfile.cs" Link="Production\Models\ModProfile.cs" />
+  </ItemGroup>
+</Project>

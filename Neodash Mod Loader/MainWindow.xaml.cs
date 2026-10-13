@@ -1,11 +1,9 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.Storage;
+using Microsoft.UI.Xaml.Media;
 using Neodash_Mod_Loader.Views;
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
+using Windows.UI.ViewManagement;
 
 namespace Neodash_Mod_Loader
 {
@@ -14,24 +12,99 @@ namespace Neodash_Mod_Loader
         // Smallest size, in effective pixels, where the Home page header buttons and the onboarding screen still fit.
         private const int MinWindowWidth = 1100;
         private const int MinWindowHeight = 640;
+        private const double DpiScaleTolerance = 0.000001;
 
         private double _minSizeScale;
+        private Windows.Graphics.SizeInt32 _minSizeWorkArea;
+        private readonly UISettings _systemUiSettings = new();
+        private readonly AccessibilitySettings _accessibilitySettings = new();
 
         public MainWindow()
         {
             this.InitializeComponent();
+            RootGrid.RequestedTheme = SettingsManager.Current.AppTheme switch
+            {
+                "Light" => ElementTheme.Light,
+                "Default" => ElementTheme.Default,
+                _ => ElementTheme.Dark
+            };
             
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
+            AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
+            TitleBarVersionText.Text = typeof(App).Assembly.GetName().Version is { } version ? "v" + version.ToString(3) : string.Empty;
+            RootGrid.ActualThemeChanged += (_, _) => UpdateTitleBarAppearance();
+            _systemUiSettings.ColorValuesChanged += SystemColorsChanged;
+            Closed += (_, _) => _systemUiSettings.ColorValuesChanged -= SystemColorsChanged;
+            UpdateTitleBarAppearance();
 
             // Set the window icon
-            this.AppWindow.SetIcon("neodash mod loader logo no bg.ico");
+            this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "neodash mod loader logo no bg.ico"));
             this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1720, 735));
             this.AppWindow.Closing += AppWindow_Closing;
+            this.AppWindow.Changed += (_, args) =>
+            {
+                if (args.DidPositionChange || args.DidSizeChange) ApplyMinimumWindowSize();
+            };
+        }
+
+        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            double opacity = args.WindowActivationState == WindowActivationState.Deactivated ? 0.6 : 1;
+            CenteredTitle.Opacity = opacity;
+            TitleBarIcon.Opacity = opacity;
+        }
+
+        private void SystemColorsChanged(UISettings sender, object args) => DispatcherQueue.TryEnqueue(UpdateTitleBarAppearance);
+
+        private void AppTitleBar_SizeChanged(object sender, SizeChangedEventArgs args) => UpdateTitleBarLayout();
+
+        private void UpdateTitleBarLayout()
+        {
+            if (RootGrid.XamlRoot is not { } root) return;
+            // Equal reserves keep the title at the window's center, including the caption-button area.
+            double padding = Math.Max(AppWindow.TitleBar.LeftInset, AppWindow.TitleBar.RightInset) / root.RasterizationScale + 16;
+            CenteredTitle.Margin = new Thickness(padding, 0, padding, 0);
+        }
+
+        private void UpdateTitleBarAppearance()
+        {
+            var bar = AppWindow.TitleBar;
+            if (_accessibilitySettings.HighContrast)
+            {
+                BackdropTint.Background = new SolidColorBrush(_systemUiSettings.UIElementColor(UIElementType.Window));
+                bar.ButtonBackgroundColor = null;
+                bar.ButtonInactiveBackgroundColor = null;
+                bar.ButtonHoverBackgroundColor = null;
+                bar.ButtonPressedBackgroundColor = null;
+                bar.ButtonForegroundColor = null;
+                bar.ButtonInactiveForegroundColor = null;
+                bar.ButtonHoverForegroundColor = null;
+                bar.ButtonPressedForegroundColor = null;
+                return;
+            }
+            bool dark = RootGrid.ActualTheme == ElementTheme.Dark;
+            BackdropTint.Background = new SolidColorBrush(dark ? Windows.UI.Color.FromArgb(96, 0, 0, 0) : Microsoft.UI.Colors.Transparent);
+            var foreground = dark ? Microsoft.UI.Colors.White : Microsoft.UI.Colors.Black;
+            bar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+            bar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+            byte hoverChannel = dark ? (byte)48 : (byte)229;
+            byte pressedChannel = dark ? (byte)64 : (byte)204;
+            bar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, hoverChannel, hoverChannel, hoverChannel);
+            bar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, pressedChannel, pressedChannel, pressedChannel);
+            bar.ButtonForegroundColor = foreground;
+            bar.ButtonHoverForegroundColor = foreground;
+            bar.ButtonPressedForegroundColor = foreground;
+            bar.ButtonInactiveForegroundColor = _systemUiSettings.UIElementColor(UIElementType.GrayText);
         }
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
         {
+            if (ModOperations.IsBusy || UiOperations.IsDialogOpen)
+            {
+                args.Cancel = true;
+                return;
+            }
             if (HomePage.Current != null && HomePage.Current.HasUnsavedChanges)
             {
                 args.Cancel = true;
@@ -46,7 +119,7 @@ namespace Neodash_Mod_Loader
                     XamlRoot = RootGrid.XamlRoot
                 };
                 
-                var result = await dialog.ShowAsync();
+                var result = await UiOperations.ShowDialogAsync(dialog);
                 
                 if (result == ContentDialogResult.Primary)
                 {
@@ -67,16 +140,18 @@ namespace Neodash_Mod_Loader
 
         private void ApplyMinimumWindowSize()
         {
-            double scale = RootGrid.XamlRoot.RasterizationScale;
-            if (scale == _minSizeScale || this.AppWindow.Presenter is not OverlappedPresenter presenter)
+            if (RootGrid.XamlRoot is not { } root || this.AppWindow.Presenter is not OverlappedPresenter presenter)
             {
                 return;
             }
+            double scale = root.RasterizationScale;
+            var workArea = DisplayArea.GetFromWindowId(this.AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
+            if (Math.Abs(scale - _minSizeScale) < DpiScaleTolerance && workArea.Width == _minSizeWorkArea.Width && workArea.Height == _minSizeWorkArea.Height) return;
             _minSizeScale = scale;
+            _minSizeWorkArea = new Windows.Graphics.SizeInt32(workArea.Width, workArea.Height);
 
             // PreferredMinimum* is in physical pixels and isn't rescaled when the DPI changes, so convert it here.
             // Capped to the work area so the window can't be forced larger than a small or heavily scaled screen.
-            var workArea = DisplayArea.GetFromWindowId(this.AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
             int minWidth = Math.Min((int)Math.Ceiling(MinWindowWidth * scale), workArea.Width);
             int minHeight = Math.Min((int)Math.Ceiling(MinWindowHeight * scale), workArea.Height);
 
@@ -93,39 +168,41 @@ namespace Neodash_Mod_Loader
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ApplyMinimumWindowSize();
-            RootGrid.XamlRoot.Changed += (s, args) => ApplyMinimumWindowSize();
+            RootGrid.XamlRoot.Changed += (s, args) =>
+            {
+                ApplyMinimumWindowSize();
+                UpdateTitleBarLayout();
+            };
+            UpdateTitleBarLayout();
 
-            // Apply saved theme
-            if (SettingsManager.Values.TryGetValue("AppTheme", out object themeObj))
-            {
-                string theme = themeObj as string;
-                RootGrid.RequestedTheme = theme switch
-                {
-                    "Light" => ElementTheme.Light,
-                    "Dark" => ElementTheme.Dark,
-                    _ => ElementTheme.Dark
-                };
-            }
-            else
-            {
-                RootGrid.RequestedTheme = ElementTheme.Dark;
-            }
-            
             // Check if setup is complete
-            bool isSetupComplete = SettingsManager.Values.TryGetValue("IsSetupComplete", out object setupObj) && setupObj is bool b ? b : false;
+            bool isSetupComplete = SettingsManager.Current.IsSetupComplete;
 
             if (!isSetupComplete)
             {
-                string dllPath = System.IO.Path.Combine(GamePathResolver.GetNeodashWin64Path(), "UE4SS.dll");
-                if (System.IO.File.Exists(dllPath))
+                string gamePath = GamePathResolver.GetNeodashWin64Path();
+                string dllPath = System.IO.Path.Combine(gamePath, "UE4SS.dll");
+                if (SettingsManager.LoadError is null && gamePath.Length > 0 && (System.IO.File.Exists(dllPath) || System.IO.File.Exists(Path.Combine(gamePath, "ue4ss", "UE4SS.dll"))))
                 {
-                    isSetupComplete = true;
-                    SettingsManager.Values["IsSetupComplete"] = true;
-                    SettingsManager.SaveSettings();
+                    SettingsManager.Current.IsSetupComplete = true;
+                    try
+                    {
+                        SettingsManager.SaveSettings();
+                        isSetupComplete = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        SettingsManager.Current.IsSetupComplete = false;
+                        AppStorage.Log("Could not save the existing UE4SS setup state; setup remains available.", ex);
+                    }
                 }
             }
 
-            if (isSetupComplete)
+            if (SettingsManager.LoadError is not null)
+            {
+                RootFrame.Navigate(typeof(SettingsPage));
+            }
+            else if (isSetupComplete)
             {
                 RootFrame.Navigate(typeof(ShellPage));
             }
@@ -137,55 +214,40 @@ namespace Neodash_Mod_Loader
             _ = CheckForUpdatesAsync();
         }
 
-        private async Task CheckForUpdatesAsync()
+        private bool _checkingUpdates;
+
+        public async Task CheckForUpdatesAsync(bool showUpToDate = false)
         {
+            if (_checkingUpdates || ModOperations.IsBusy) return;
+            _checkingUpdates = true;
             try
             {
-                using var client = new HttpClient();
-                string verStr = await client.GetStringAsync("https://neodashweb.pages.dev/modloader/download/ver.txt");
-                if (Version.TryParse(verStr.Trim(), out Version onlineVersion))
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+                string text = await client.GetStringAsync(Properties.ResourceStrings.GetRequired("ModLoaderVersionUrl"));
+                if (!Version.TryParse(text.Trim(), out Version? onlineVersion)) throw new IOException("The update server returned an invalid version.");
+                Version? currentVersion = typeof(App).Assembly.GetName().Version;
+                if (onlineVersion <= currentVersion)
                 {
-                    Version currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-                    
-                    if (onlineVersion > currentVersion)
-                    {
-                        var dialog = new ContentDialog
-                        {
-                            Title = "Update Available",
-                            Content = "Downloading update...",
-                            XamlRoot = RootGrid.XamlRoot
-                        };
-
-                        _ = dialog.ShowAsync();
-
-                        var response = await client.GetAsync("https://www.dropbox.com/scl/fi/6jdl7r2yg9m3c9fkc6tgm/ModLoaderSetup.exe?rlkey=ovtja9dcb5qp6gy1nyj28u9pu&st=fe6z5awc&dl=1");
-                        response.EnsureSuccessStatusCode();
-
-                        string tempPath = System.IO.Path.GetTempPath();
-                        string installerPath = System.IO.Path.Combine(tempPath, "ModLoaderSetup.exe");
-
-                        using (var fs = new System.IO.FileStream(installerPath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                        {
-                            await response.Content.CopyToAsync(fs);
-                        }
-
-                        // Launch the installer
-                        var processInfo = new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = installerPath,
-                            UseShellExecute = true
-                        };
-                        System.Diagnostics.Process.Start(processInfo);
-
-                        // Exit the current app so the installer can overwrite files
-                        Application.Current.Exit();
-                    }
+                    if (showUpToDate) await UiOperations.ShowMessageAsync(RootGrid.XamlRoot, "No update available", "You are using the latest available version.");
+                    return;
                 }
+                if (!await UiOperations.ConfirmAsync(RootGrid.XamlRoot, "Update available", $"Version {onlineVersion} is available. Download and open its installer?", "Download update")) return;
+                if (HomePage.Current is { HasUnsavedChanges: true } home && !await home.SaveModsAsync()) return;
+                string? installer = null;
+                bool success = await UiOperations.RunAsync(RootGrid.XamlRoot, "Download application update", async (progress, token) =>
+                {
+                    installer = await ModOperations.DownloadAsync(Properties.ResourceStrings.GetRequired("ModLoaderDownloadUrl"), ".exe", progress, token);
+                });
+                if (!success || installer is null) return;
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true });
+                Application.Current.Exit();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Silently ignore network or parsing errors
+                AppStorage.Log("Application update check failed.", ex);
+                if (showUpToDate) await UiOperations.ShowMessageAsync(RootGrid.XamlRoot, "Update check failed", ex.Message);
             }
+            finally { _checkingUpdates = false; }
         }
 
         public void SetTitleBarBackground(Microsoft.UI.Xaml.Media.Brush brush)

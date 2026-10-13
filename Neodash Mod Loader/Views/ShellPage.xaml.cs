@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 
 namespace Neodash_Mod_Loader.Views
 {
@@ -14,16 +13,22 @@ namespace Neodash_Mod_Loader.Views
 
         private void ShellPage_Loaded(object sender, RoutedEventArgs e)
         {
-            NavView.SelectedItem = NavView.MenuItems[0];
-            ContentFrame.Navigate(typeof(HomePage));
+            NavView.SelectedItem = GamePathResolver.GetNeodashWin64Path().Length > 0 ? NavView.MenuItems[0] : NavView.FooterMenuItems[0];
         }
 
-        private bool _isHandlingSelection = false;
-        private NavigationViewItem _lastItem;
+        private bool _isHandlingSelection;
+        private NavigationViewItem? _lastItem;
 
         private async void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
             if (_isHandlingSelection) return;
+            if (ModOperations.IsBusy || UiOperations.IsDialogOpen)
+            {
+                _isHandlingSelection = true;
+                if (_lastItem is not null) NavView.SelectedItem = _lastItem;
+                _isHandlingSelection = false;
+                return;
+            }
 
             if (HomePage.Current != null && HomePage.Current.HasUnsavedChanges)
             {
@@ -39,7 +44,7 @@ namespace Neodash_Mod_Loader.Views
                     XamlRoot = this.XamlRoot
                 };
                 
-                var result = await dialog.ShowAsync();
+                var result = await UiOperations.ShowDialogAsync(dialog);
                 
                 if (result == ContentDialogResult.Secondary)
                 {
@@ -59,6 +64,11 @@ namespace Neodash_Mod_Loader.Views
                 _isHandlingSelection = false;
             }
 
+            NavigateToSelectedPage(args);
+        }
+
+        private void NavigateToSelectedPage(NavigationViewSelectionChangedEventArgs args)
+        {
             _lastItem = args.SelectedItem as NavigationViewItem;
 
             if (args.IsSettingsSelected)

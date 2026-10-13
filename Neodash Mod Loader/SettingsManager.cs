@@ -1,18 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
+using Neodash_Mod_Loader.Models;
 
 namespace Neodash_Mod_Loader
 {
     public static class SettingsManager
     {
-        private static readonly string SettingsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Neodash Mod Loader",
-            "settings.json");
-
-        public static Dictionary<string, object> Values { get; private set; }
+        private static readonly string SettingsDirectory = AppStorage.DirectoryPath;
+        private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "settings.json");
+        private static bool _canSaveSettings = true;
+        public static string? LoadError { get; private set; }
+        public static AppSettings Current { get; private set; } = new();
 
         static SettingsManager()
         {
@@ -21,69 +18,142 @@ namespace Neodash_Mod_Loader
 
         public static void LoadSettings()
         {
+            _canSaveSettings = true;
+            LoadError = null;
             if (File.Exists(SettingsPath))
             {
                 try
                 {
                     string json = File.ReadAllText(SettingsPath);
-                    Values = JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? new Dictionary<string, object>();
-                    
-                    // JSON deserializes numbers differently, need to convert back to correct types if needed.
-                    // For bools and strings, it usually wraps them in JsonElement, so let's normalize it.
-                    var normalized = new Dictionary<string, object>();
-                    foreach (var kvp in Values)
-                    {
-                        if (kvp.Value is JsonElement element)
-                        {
-                            switch (element.ValueKind)
-                            {
-                                case JsonValueKind.True:
-                                    normalized[kvp.Key] = true;
-                                    break;
-                                case JsonValueKind.False:
-                                    normalized[kvp.Key] = false;
-                                    break;
-                                case JsonValueKind.String:
-                                    normalized[kvp.Key] = element.GetString();
-                                    break;
-                                case JsonValueKind.Number:
-                                    normalized[kvp.Key] = element.GetDouble();
-                                    break;
-                                default:
-                                    normalized[kvp.Key] = element.ToString();
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            normalized[kvp.Key] = kvp.Value;
-                        }
-                    }
-                    Values = normalized;
+                    var loaded = JsonSerializer.Deserialize(json, AppJsonContext.Default.AppSettings)
+                        ?? throw new JsonException("Settings must contain a JSON object.");
+                    loaded.Installations ??= [];
+                    loaded.Ue4ssInstallations ??= [];
+                    loaded.AdditionalSettings ??= [];
+                    ValidateSettings(loaded);
+                    Current = loaded;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Values = new Dictionary<string, object>();
+                    Current = new();
+                    // A corrupt or incompatible file must stay intact until it can be loaded successfully.
+                    _canSaveSettings = false;
+                    LoadError = $"Settings could not be loaded. Your existing file has been preserved: {ex.Message}";
+                    AppStorage.Log(LoadError, ex);
                 }
             }
             else
             {
-                Values = new Dictionary<string, object>();
+                Current = new();
             }
         }
 
         public static void SaveSettings()
         {
+            EnsureWritable();
+
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath));
-                string json = JsonSerializer.Serialize(Values, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(SettingsPath, json);
+                ValidateSettings(Current);
+                Directory.CreateDirectory(SettingsDirectory);
+                string json = JsonSerializer.Serialize(Current, AppJsonContext.Default.AppSettings);
+                AppStorage.WriteAtomically(SettingsPath, json);
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore save errors
+                AppStorage.Log("Could not save settings.", ex);
+                throw;
             }
+        }
+
+        public static void EnsureWritable()
+        {
+            if (!_canSaveSettings) throw new InvalidOperationException(LoadError);
+        }
+
+        private static void ValidateSettings(AppSettings settings)
+        {
+            if (!string.IsNullOrWhiteSpace(settings.GameDirectory)) ValidateGamePath(settings.GameDirectory);
+            ValidateModRecords(settings.Installations);
+            ValidateRuntimeRecords(settings.Ue4ssInstallations);
+        }
+
+        private static void ValidateModRecords(IEnumerable<InstalledModRecord> records)
+        {
+            var identities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var owners = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var record in records)
+            {
+                if (record is null || string.IsNullOrWhiteSpace(record.Id) || string.IsNullOrWhiteSpace(record.Name)
+                    || string.IsNullOrWhiteSpace(record.Version) || record.FolderNames is not { Count: > 0 })
+                    throw new JsonException("An installed-mod record is incomplete.");
+                string game = ValidateGamePath(record.GamePath);
+                if (!identities.Add(game + "\0" + record.Id)) throw new JsonException("Installed-mod records contain duplicate identities.");
+                foreach (string folder in record.FolderNames)
+                {
+                    ValidateModFolder(folder);
+                    if (!owners.Add(game + "\0" + folder)) throw new JsonException("Multiple installed-mod records claim the same folder.");
+                }
+                ValidateModSource(record);
+            }
+        }
+
+        private static void ValidateModSource(InstalledModRecord record)
+        {
+            if (record.DownloadUrl is not null && (!Uri.TryCreate(record.DownloadUrl, UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps))
+                throw new JsonException("An installed-mod download address must use HTTPS.");
+            if (record.Sha256 is not null && (record.Sha256.Length != 64 || record.Sha256.Any(c => !Uri.IsHexDigit(c))))
+                throw new JsonException("An installed-mod checksum is invalid.");
+            if (record.BackupPath is not null) ValidateGamePath(record.BackupPath);
+        }
+
+        private static void ValidateRuntimeRecords(IEnumerable<Ue4SsInstallationRecord> records)
+        {
+            var runtimeGames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var runtime in records)
+            {
+                if (runtime is null || runtime.Files is not { Count: > 0 }) throw new JsonException("A UE4SS installation record is incomplete.");
+                string game = ValidateGamePath(runtime.GamePath);
+                if (!runtimeGames.Add(game)) throw new JsonException("Duplicate UE4SS installation records were found.");
+                foreach (string file in runtime.Files) ValidateRuntimeFile(file);
+            }
+        }
+
+        private static void ValidateRuntimeFile(string? file)
+        {
+            if (string.IsNullOrWhiteSpace(file) || Path.IsPathRooted(file)) throw new JsonException("A UE4SS installation contains an invalid relative file path.");
+            foreach (string segment in file.Split(['/', '\\'], StringSplitOptions.None))
+                if (string.IsNullOrWhiteSpace(segment) || segment is "." or ".." || segment.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    throw new JsonException("A UE4SS installation contains an invalid relative file path.");
+        }
+
+        private static string ValidateGamePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || path.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+                throw new JsonException("Installation and backup paths must be valid absolute paths.");
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+        }
+
+        private static void ValidateModFolder(string? folder)
+        {
+            if (string.IsNullOrWhiteSpace(folder) || folder != folder.Trim() || folder.EndsWith('.') || folder is "." or ".."
+                || folder.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || folder.Equals("Keybinds", StringComparison.OrdinalIgnoreCase)
+                || folder.Equals("shared", StringComparison.OrdinalIgnoreCase))
+                throw new JsonException("An installed-mod record contains an invalid folder name.");
+            string stem = folder.Split('.')[0];
+            if (new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" }.Contains(stem, StringComparer.OrdinalIgnoreCase))
+                throw new JsonException("An installed-mod record contains a reserved Windows folder name.");
+        }
+
+        public static AppSettings CaptureSnapshot() => JsonSerializer.Deserialize(
+            JsonSerializer.Serialize(Current, AppJsonContext.Default.AppSettings), AppJsonContext.Default.AppSettings)
+            ?? throw new JsonException("Could not snapshot settings.");
+
+        public static void RestoreSnapshot(AppSettings snapshot, bool persist = true)
+        {
+            Current = snapshot;
+            if (persist) SaveSettings();
         }
     }
 }

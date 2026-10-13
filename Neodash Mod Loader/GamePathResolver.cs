@@ -1,64 +1,50 @@
 using Microsoft.Win32;
-using System.IO;
 using System.Text.RegularExpressions;
 
-namespace Neodash_Mod_Loader
+namespace Neodash_Mod_Loader;
+
+public static partial class GamePathResolver
 {
-    public static class GamePathResolver
+    [GeneratedRegex("\"path\"\\s+\"([^\"]+)\"")]
+    private static partial Regex LibraryPathPattern();
+
+    public static string? NormalizeGameDirectory(string directory)
     {
-        private static string _cachedPath = null;
-        private const string NeodashRelativePath = @"steamapps\common\Neodash\Runway\Binaries\Win64";
-
-        public static string GetNeodashWin64Path()
+        foreach (string candidate in new[] { directory, Path.Combine(directory, "Runway", "Binaries", "Win64"), Path.Combine(directory, "Binaries", "Win64") })
         {
-            if (_cachedPath != null && Directory.Exists(_cachedPath))
-            {
-                return _cachedPath;
-            }
-
-            // 1. Try to find Steam installation path from Registry
-            string steamPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null) as string;
-            
-            if (string.IsNullOrEmpty(steamPath))
-            {
-                // Fallback to default C drive steam path
-                steamPath = @"C:\Program Files (x86)\Steam";
-            }
-
-            steamPath = steamPath.Replace('/', '\\');
-
-            // 2. Check default steamapps folder
-            string defaultGamePath = Path.Combine(steamPath, NeodashRelativePath);
-            if (Directory.Exists(defaultGamePath))
-            {
-                _cachedPath = defaultGamePath;
-                return defaultGamePath;
-            }
-
-            // 3. Parse libraryfolders.vdf for other drives
-            string vdfPath = Path.Combine(steamPath, @"steamapps\libraryfolders.vdf");
-            if (File.Exists(vdfPath))
-            {
-                string content = File.ReadAllText(vdfPath);
-                // Simple regex to extract all "path" values
-                var matches = Regex.Matches(content, "\"path\"\\s+\"([^\"]+)\"");
-                foreach (Match match in matches)
-                {
-                    if (match.Groups.Count > 1)
-                    {
-                        string libPath = match.Groups[1].Value.Replace("\\\\", "\\");
-                        string gamePath = Path.Combine(libPath, NeodashRelativePath);
-                        if (Directory.Exists(gamePath))
-                        {
-                            _cachedPath = gamePath;
-                            return gamePath;
-                        }
-                    }
-                }
-            }
-
-            // If all else fails, return the default path (even if it doesn't exist yet, so we can create it)
-            return defaultGamePath;
+            if (Directory.Exists(candidate) && File.Exists(Path.Combine(candidate, "Runway-Win64-Shipping.exe")))
+                return Path.TrimEndingDirectorySeparator(Path.GetFullPath(candidate));
         }
+        return null;
     }
+
+    public static string GetNeodashWin64Path()
+    {
+        if (!string.IsNullOrWhiteSpace(SettingsManager.Current.GameDirectory))
+            return NormalizeGameDirectory(SettingsManager.Current.GameDirectory) ?? string.Empty;
+
+        string steam = (Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null) as string
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam")).Replace('/', '\\');
+        List<string> libraries = [steam];
+        try
+        {
+            string vdf = Path.Combine(steam, "steamapps", "libraryfolders.vdf");
+            if (File.Exists(vdf))
+                foreach (Match match in LibraryPathPattern().Matches(File.ReadAllText(vdf)))
+                    libraries.Add(match.Groups[1].Value.Replace("\\\\", "\\"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            AppStorage.Log("Could not read Steam libraries.", ex);
+        }
+        foreach (string library in libraries)
+        {
+            string? found = NormalizeGameDirectory(Path.Combine(library, "steamapps", "common", "Neodash"));
+            if (found is not null) return found;
+        }
+        return string.Empty;
+    }
+
+    public static string RequireGamePath() => GetNeodashWin64Path() is { Length: > 0 } path ? path
+        : throw new DirectoryNotFoundException("Neodash was not found. Choose its installation folder in Settings or Setup.");
 }

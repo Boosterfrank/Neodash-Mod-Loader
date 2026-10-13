@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neodash_Mod_Loader
 {
@@ -17,7 +13,7 @@ namespace Neodash_Mod_Loader
         public const string DisabledModsFolderName = "DisabledMods";
 
         // UE4SS support folders that live in Mods but aren't user mods, so they're never listed or moved.
-        private static readonly HashSet<string> ReservedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Keybinds", "shared" };
+        private static readonly HashSet<string> ReservedFolders = new(StringComparer.OrdinalIgnoreCase) { "Keybinds", "shared" };
 
         public static string GetModPath(string win64Path, string modName, bool enabled)
         {
@@ -35,7 +31,7 @@ namespace Neodash_Mod_Loader
         /// </summary>
         public static List<(string Name, bool IsEnabled)> GetMods(string win64Path)
         {
-            var mods = new List<(string Name, bool IsEnabled)>();
+            List<(string Name, bool IsEnabled)> mods = [];
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (bool enabled in new[] { true, false })
@@ -43,7 +39,7 @@ namespace Neodash_Mod_Loader
                 string folderPath = Path.Combine(win64Path, enabled ? ModsFolderName : DisabledModsFolderName);
                 if (!Directory.Exists(folderPath)) continue;
 
-                foreach (var name in Directory.GetDirectories(folderPath).Select(Path.GetFileName))
+                foreach (var name in Directory.GetDirectories(folderPath).Select(Path.GetFileName).OfType<string>())
                 {
                     if (!ReservedFolders.Contains(name) && seen.Add(name))
                     {
@@ -82,11 +78,11 @@ namespace Neodash_Mod_Loader
             {
                 // Lua mods without an enabled.txt still need a mods.txt entry to load. Done before the move because
                 // UE4SS skips entries whose folder isn't in Mods, so a failed move leaves nothing inconsistent.
-                EnableInModsTxt(win64Path, new[] { modName });
+                EnableInModsTxt(win64Path, [modName]);
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(destination));
-            Directory.Move(source, destination);
+            Directory.CreateDirectory(Path.Combine(win64Path, enabled ? ModsFolderName : DisabledModsFolderName));
+            FileSystemRetry.Move(() => Directory.Move(source, destination), Thread.Sleep);
         }
 
         /// <summary>
@@ -96,8 +92,8 @@ namespace Neodash_Mod_Loader
         public static List<string> ApplyEnabledMods(string win64Path, IEnumerable<string> enabledMods)
         {
             var wanted = new HashSet<string>(enabledMods, StringComparer.OrdinalIgnoreCase);
-            var moved = new List<(string Name, bool Enabled)>();
-            var errors = new List<string>();
+            List<(string Name, bool Enabled)> moved = [];
+            List<string> errors = [];
 
             foreach (var mod in GetMods(win64Path))
             {
@@ -139,34 +135,15 @@ namespace Neodash_Mod_Loader
         /// </summary>
         public static void InstallModZip(string win64Path, string zipPath)
         {
-            string modsPath = Path.Combine(win64Path, ModsFolderName);
-            Directory.CreateDirectory(modsPath);
-
-            var modFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+            string backupRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Neodash Mod Loader",
+                "ModBackups");
+            var result = ModPackageInstaller.InstallZip(win64Path, zipPath, backupRoot);
+            if (!result.Success)
             {
-                foreach (ZipArchiveEntry entry in archive.Entries)
-                {
-                    var parts = entry.FullName.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length > 0)
-                    {
-                        modFolders.Add(parts[0]);
-                    }
-                }
+                throw new IOException(result.Errors.Count == 0 ? "The mod package could not be installed." : string.Join(Environment.NewLine, result.Errors));
             }
-
-            foreach (var modFolder in modFolders)
-            {
-                if (IsValidModFolderName(modFolder) &&
-                    Directory.Exists(GetModPath(win64Path, modFolder, false)) &&
-                    !Directory.Exists(GetModPath(win64Path, modFolder, true)))
-                {
-                    SetModEnabled(win64Path, modFolder, true);
-                }
-            }
-
-            ZipFile.ExtractToDirectory(zipPath, modsPath, overwriteFiles: true);
-            EnableInModsTxt(win64Path, modFolders);
         }
 
         /// <summary>
@@ -178,7 +155,8 @@ namespace Neodash_Mod_Loader
             string modsTxtPath = Path.Combine(win64Path, ModsFolderName, "mods.txt");
             if (!File.Exists(modsTxtPath)) return;
 
-            var lines = new List<string>(File.ReadAllLines(modsTxtPath));
+            ConfigFileDocument document = ConfigFileDocument.Load(modsTxtPath, File.ReadAllBytes(modsTxtPath));
+            List<string> lines = ModPackageInstaller.SplitModsTxtLines(document.Text, out string newline, out bool hasFinalNewline);
             bool changed = false;
 
             foreach (var modName in modNames)
@@ -200,7 +178,7 @@ namespace Neodash_Mod_Loader
 
             if (changed)
             {
-                File.WriteAllLines(modsTxtPath, lines);
+                AppStorage.WriteAtomically(modsTxtPath, document.Encode(ModPackageInstaller.JoinModsTxtLines(lines, newline, hasFinalNewline)));
             }
         }
 
@@ -217,7 +195,7 @@ namespace Neodash_Mod_Loader
             bool allMoved = true;
             foreach (var line in File.ReadAllLines(modsTxtPath))
             {
-                if (!TryParseModsTxtEntry(line, out string name, out string value) || value != "0") continue;
+                if (!TryParseModsTxtEntry(line, out string? name, out string? value) || value != "0") continue;
                 if (!IsValidModFolderName(name) || !Directory.Exists(GetModPath(win64Path, name, true))) continue;
 
                 try
@@ -243,10 +221,10 @@ namespace Neodash_Mod_Loader
         }
 
         // Parses a "Name : 1" line. Comments and anything without exactly one colon aren't entries.
-        private static bool TryParseModsTxtEntry(string line, out string name, out string value)
+        private static bool TryParseModsTxtEntry(string line, [NotNullWhen(true)] out string? name, [NotNullWhen(true)] out string? value)
         {
             var parts = line.Split(':', StringSplitOptions.TrimEntries);
-            if (parts.Length == 2 && !line.TrimStart().StartsWith(";"))
+            if (parts.Length == 2 && !line.TrimStart().StartsWith(';'))
             {
                 name = parts[0];
                 value = parts[1];
@@ -260,7 +238,7 @@ namespace Neodash_Mod_Loader
 
         private static int FindModsTxtEntry(List<string> lines, string modName)
         {
-            return lines.FindIndex(line => TryParseModsTxtEntry(line, out string name, out _) && name.Equals(modName, StringComparison.OrdinalIgnoreCase));
+            return lines.FindIndex(line => TryParseModsTxtEntry(line, out string? name, out _) && name.Equals(modName, StringComparison.OrdinalIgnoreCase));
         }
 
         // Where new entries go: above "Keybinds : 1", along with the comment and blank line UE4SS puts before it.
@@ -269,7 +247,7 @@ namespace Neodash_Mod_Loader
             int index = FindModsTxtEntry(lines, "Keybinds");
             if (index < 0) return lines.Count;
 
-            if (index > 0 && lines[index - 1].TrimStart().StartsWith(";") && lines[index - 1].Contains("keybinds", StringComparison.OrdinalIgnoreCase))
+            if (index > 0 && lines[index - 1].TrimStart().StartsWith(';') && lines[index - 1].Contains("keybinds", StringComparison.OrdinalIgnoreCase))
             {
                 index--;
             }
