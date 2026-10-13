@@ -9,6 +9,7 @@ public sealed partial class HomePageController(IModEditSession edits, IModWorksp
     public IReadOnlyList<EditableMod> Mods => edits.Mods;
     public bool HasUnsavedChanges => edits.HasUnsavedChanges;
     public bool IsBusy => workspace.IsBusy;
+    public bool HasGame => modActions.HasGame;
     public string? LoadError => _loadError;
     public IReadOnlyList<ModProfile> Profiles => profileActions.Profiles;
     public ModProfile ActiveProfile => profileActions.ActiveProfile;

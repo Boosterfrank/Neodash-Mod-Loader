@@ -7,6 +7,7 @@ namespace Neodash_Mod_Loader.Services.Core;
 public sealed class RuntimeService(IGameService game) : IRuntimeService
 {
     public bool IsInstalled(string gamePath) => File.Exists(Path.Combine(gamePath, "UE4SS.dll")) || File.Exists(Path.Combine(gamePath, "ue4ss", "UE4SS.dll"));
+    public bool CanRemove(string gamePath) => Ue4SsService.CanUninstall(gamePath);
     public string GetStatus(string gamePath) => Ue4SsService.GetStatus(gamePath);
     public bool HasConfiguration => game.GetPath()is { Length: > 0 } path && File.Exists(Path.Combine(path, "UE4SS-settings.ini"));
 

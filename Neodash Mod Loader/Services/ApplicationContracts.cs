@@ -9,6 +9,7 @@ public interface IAppDiagnostics
     void Log(string message, Exception? exception = null);
     void LogCrash(Exception exception);
     string GetLocation(string name);
+    bool CanOpenLocation(string name);
 }
 
 public interface ISettingsService
@@ -84,6 +85,7 @@ public interface IModCatalog
 public interface IRuntimeService
 {
     bool IsInstalled(string gamePath);
+    bool CanRemove(string gamePath);
     string GetStatus(string gamePath);
     bool HasConfiguration { get; }
 

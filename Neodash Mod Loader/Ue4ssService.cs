@@ -26,6 +26,22 @@ public static partial class Ue4SsService
         return $"{runtime} — {(proxy ? "loader files present" : "proxy DLL missing; repair recommended")}";
     }
 
+    public static string GetLogPath(string path)
+    {
+        string? dll = FindRuntimeDll(path);
+        return dll is null ? Path.Combine(path, "UE4SS.log") : Path.ChangeExtension(dll, ".log");
+    }
+
+    public static bool CanUninstall(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var record = SettingsManager.Current.Ue4ssInstallations.Find(r => ModOperations.SameGame(r.GamePath, path));
+        if (record is null) return false;
+        try { return GetRuntimeTargets(path, record).Any(relative => File.Exists(SafePaths.Child(path, relative))); }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
     private static string? FindRuntimeDll(string path)
     {
         // Current UE4SS proxies prefer the ue4ss subfolder over the legacy flat layout.

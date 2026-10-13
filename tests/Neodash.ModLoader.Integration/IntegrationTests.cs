@@ -53,4 +53,6 @@ public sealed partial class IntegrationTests
     [Fact] public Task Ue4SsStatusDetectsVersionFromMetadataOrStartupHeader() => AssertIsolatedAsync(nameof(Ue4SsStatusDetectsVersionFromMetadataOrStartupHeader), Ue4SsStatusDetectsVersionFromMetadataOrStartupHeaderCore);
     [Fact] public Task Ue4SsStatusIgnoresMissingStaleLockedAndInvalidLogs() => AssertIsolatedAsync(nameof(Ue4SsStatusIgnoresMissingStaleLockedAndInvalidLogs), Ue4SsStatusIgnoresMissingStaleLockedAndInvalidLogsCore);
     [Fact] public Task Ue4SsStatusDetectsFutureVersionNumbersAndNestedLayouts() => AssertIsolatedAsync(nameof(Ue4SsStatusDetectsFutureVersionNumbersAndNestedLayouts), Ue4SsStatusDetectsFutureVersionNumbersAndNestedLayoutsCore);
+    [Fact] public Task CatalogAvailabilityReflectsDiskAndTrackedPackageState() => AssertIsolatedAsync(nameof(CatalogAvailabilityReflectsDiskAndTrackedPackageState), scratch => { CatalogAvailability(scratch); return Task.CompletedTask; });
+    [Fact] public Task RuntimeAndLogAvailabilityReflectsExistingFilesOnly() => AssertIsolatedAsync(nameof(RuntimeAndLogAvailabilityReflectsExistingFilesOnly), scratch => { RuntimeAndLogAvailability(scratch); return Task.CompletedTask; });
 }

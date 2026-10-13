@@ -6,6 +6,7 @@ public sealed record DroppedMod(string SourcePath, bool IsFolder);
 /// <summary>Installed-mod commands, file pickers, and configuration handoff without page ownership.</summary>
 public sealed class HomeModActions(IModWorkspace workspace, IGameService game, INavigationGuard navigation, IDesktopDialogs dialogs, IDesktopFiles files, IConfigurationService configurations, IConfigurationEditor editor)
 {
+    public bool HasGame => game.GetPath().Length > 0;
     public async Task LaunchAsync()
     {
         if (!await EnsureReadyAsync())

@@ -104,7 +104,20 @@ public sealed partial class HomePage : Page
         Mods.Clear();
     }
 
-    private void CheckDirtyState() => SaveButton.IsEnabled = HasUnsavedChanges && _controller is { IsBusy: false };
+    private void CheckDirtyState()
+    {
+        bool idle = _controller is { IsBusy: false };
+        bool hasGame = _controller?.HasGame == true;
+        SaveButton.IsEnabled = HasUnsavedChanges && idle && hasGame;
+        InstallModButton.IsEnabled = idle && hasGame;
+        LaunchButton.IsEnabled = idle && hasGame;
+        FolderButton.IsEnabled = hasGame;
+        NewProfileItem.IsEnabled = idle && hasGame;
+        RefreshButton.IsEnabled = idle && hasGame;
+        ProfileComboBox.IsEnabled = idle && hasGame;
+        ProfileActionsButton.IsEnabled = idle;
+        DeleteProfileButton.IsEnabled = idle && hasGame && (_controller?.Profiles.Count ?? 0) > 1;
+    }
     public void ApplyFilter()
     {
         if (NoModsText is null)
@@ -123,6 +136,10 @@ public sealed partial class HomePage : Page
         FilteredMods.Clear();
         foreach (ModItem mod in items)
             FilteredMods.Add(mod);
+        bool canEdit = _controller is { IsBusy: false, LoadError: null } && _controller.HasGame;
+        BulkTools.IsEnabled = canEdit && FilteredMods.Count > 0;
+        EnableAllShownItem.IsEnabled = canEdit && FilteredMods.Any(mod => !mod.IsEnabled);
+        DisableAllShownItem.IsEnabled = canEdit && FilteredMods.Any(mod => mod.IsEnabled);
         NoModsText.Text = _controller?.LoadError ?? (Mods.Count == 0 ? "No UE4SS mods installed. Use Install… or drop a ZIP or mod folder here." : "No mods match. Clear search or choose All mods.");
         NoModsText.Visibility = _controller?.LoadError is not null || FilteredMods.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -134,7 +151,6 @@ public sealed partial class HomePage : Page
         _isUpdatingProfiles = true;
         ProfileComboBox.ItemsSource = _controller.Profiles.Select(profile => profile.Name).ToList();
         ProfileComboBox.SelectedItem = _controller.ActiveProfile.Name;
-        DeleteProfileButton.IsEnabled = _controller.Profiles.Count > 1;
         _isUpdatingProfiles = false;
     }
 

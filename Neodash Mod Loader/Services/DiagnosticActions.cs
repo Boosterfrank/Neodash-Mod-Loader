@@ -5,6 +5,7 @@ public sealed class DiagnosticActions(IAppDiagnostics diagnostics, IDesktopFiles
     public Version Version => diagnostics.Version;
 
     public void Open(string name) => files.OpenPath(diagnostics.GetLocation(name));
+    public bool CanOpen(string name) => diagnostics.CanOpenLocation(name);
     public Task ShowSettingsErrorAsync(Exception exception)
     {
         diagnostics.Log("Settings operation failed.", exception);

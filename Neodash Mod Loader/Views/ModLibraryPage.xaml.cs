@@ -19,6 +19,7 @@ public partial class ModLibraryItemViewModel : INotifyPropertyChanged
     public bool IsInstalled { get; set; }
     public bool HasUpdate { get; set; }
     public Visibility RepairVisibility { get; set; } = Visibility.Collapsed;
+    public Visibility ActionsVisibility { get; set; } = Visibility.Collapsed;
     public bool CanRepair { get; set; }
 
     public string ButtonText
@@ -139,6 +140,7 @@ public sealed partial class ModLibraryPage : Page
             InstalledText = state.Status,
             ButtonText = state.ButtonText,
             RepairVisibility = state.ShowRepair ? Visibility.Visible : Visibility.Collapsed,
+            ActionsVisibility = state.HasMenuActions ? Visibility.Visible : Visibility.Collapsed,
             CanRepair = state.CanRepair,
             IsButtonEnabled = state.CanInstall
         };
@@ -164,7 +166,8 @@ public sealed partial class ModLibraryPage : Page
         ModsListView.ItemsSource = Mods;
         EmptyLibraryText.Text = (_catalog.Mods?.Count ?? 0) == 0 ? "The library has no mods yet. Use Refresh to check again." : "No mods match. Clear search or choose All mods.";
         EmptyLibraryText.Visibility = !_loading && Mods.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        UpdateAllButton.IsEnabled = !_busy && !_loading && Mods.Any(m => m.HasUpdate);
+        UpdateAllButton.IsEnabled = !_busy && !_loading && !Controller.IsBusy
+            && (_catalog.Mods ?? []).Any(mod => Controller.GetState(mod).HasUpdate);
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();

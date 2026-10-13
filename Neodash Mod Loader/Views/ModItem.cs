@@ -18,6 +18,9 @@ public sealed partial class ModItem : INotifyPropertyChanged, IDisposable
     public string Name => _mod.Name;
     public bool CanRepair => _mod.CanRepair;
     public bool CanRestore => _mod.CanRestore;
+    public Visibility RepairVisibility => CanRepair ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility RestoreVisibility => CanRestore ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility RecoveryVisibility => CanRepair || CanRestore ? Visibility.Visible : Visibility.Collapsed;
     public string ManagedVersion => _mod.ManagedVersion;
     public Visibility ManagedVersionVisibility => string.IsNullOrWhiteSpace(ManagedVersion) ? Visibility.Collapsed : Visibility.Visible;
     public string EntryPointPath => _mod.EntryPointPath;

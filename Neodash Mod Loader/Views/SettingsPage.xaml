@@ -63,9 +63,9 @@
             </StackPanel>
             <TextBlock Text="Diagnostics and recovery" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,16,0,0" />
             <StackPanel x:Name="DiagnosticActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
-                <Button Content="Operation log" Click="OpenPathButton_Click" Tag="operations" />
+                <Button x:Name="OperationLogButton" Content="Operation log" Click="OpenPathButton_Click" Tag="operations" ToolTipService.ToolTip="Open the operation log when one has been created." />
                 <Button x:Name="Ue4ssLogButton" Content="UE4SS log" Click="OpenPathButton_Click" Tag="ue4ss" />
-                <Button Content="Crash log" Click="OpenPathButton_Click" Tag="crash" />
+                <Button x:Name="CrashLogButton" Content="Crash log" Click="OpenPathButton_Click" Tag="crash" ToolTipService.ToolTip="Open the crash log when one has been created." />
                 <Button Content="Update backups" Click="OpenPathButton_Click" Tag="backups" />
                 <Button Content="Settings folder" Click="OpenPathButton_Click" Tag="settings" />
             </StackPanel>

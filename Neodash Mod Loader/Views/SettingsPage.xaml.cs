@@ -50,9 +50,12 @@ public sealed partial class SettingsPage : Page
         bool hasGame = state.HasGame;
         OpenGameFolderButton.IsEnabled = hasGame;
         InstallUe4ssButton.IsEnabled = hasGame;
-        RemoveUe4ssButton.IsEnabled = hasGame;
+        RemoveUe4ssButton.IsEnabled = state.CanRemoveRuntime;
+        ToolTipService.SetToolTip(RemoveUe4ssButton, state.CanRemoveRuntime ? "Remove tracked UE4SS runtime files." : "Install or repair UE4SS to track its runtime files before removing it.");
         EditUe4ssConfigButton.IsEnabled = state.HasRuntimeConfiguration;
-        Ue4ssLogButton.IsEnabled = hasGame;
+        Ue4ssLogButton.IsEnabled = state.HasRuntimeLog;
+        OperationLogButton.IsEnabled = state.HasOperationLog;
+        CrashLogButton.IsEnabled = state.HasCrashLog;
         Ue4ssStatusText.Text = state.RuntimeStatus;
         SettingsErrorText.Text = state.LoadError ?? string.Empty;
         SettingsRecoveryBar.IsOpen = state.LoadError is not null;
@@ -100,7 +103,11 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private Task ShowErrorAsync(Exception ex) => Controller.ShowErrorAsync(ex);
+    private async Task ShowErrorAsync(Exception ex)
+    {
+        await Controller.ShowErrorAsync(ex);
+        if (IsLoaded) RefreshStatus();
+    }
     private async void ChooseGameButton_Click(object sender, RoutedEventArgs e)
     {
         if (Controller.IsBusy)
@@ -133,12 +140,12 @@ public sealed partial class SettingsPage : Page
 
     private async void InstallUe4ssButton_Click(object sender, RoutedEventArgs e)
     {
-        await RunActionAsync(Controller.InstallRuntimeAsync, refresh: true);
+        await RunActionAsync(Controller.InstallRuntimeAsync);
     }
 
     private async void UninstallUe4ssButton_Click(object sender, RoutedEventArgs e)
     {
-        await RunActionAsync(Controller.RemoveRuntimeAsync, refresh: true);
+        await RunActionAsync(Controller.RemoveRuntimeAsync);
     }
 
     private async void OpenPathButton_Click(object sender, RoutedEventArgs e)
@@ -162,6 +169,7 @@ public sealed partial class SettingsPage : Page
     private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
         await Controller.CheckUpdatesAsync();
+        if (IsLoaded) RefreshStatus();
     }
 
     private async void ResetAppButton_Click(object sender, RoutedEventArgs e)
@@ -169,15 +177,14 @@ public sealed partial class SettingsPage : Page
         await RunActionAsync(Controller.RestartSetupAsync);
     }
 
-    private async Task RunActionAsync(Func<Task> action, bool refresh = false)
+    private async Task RunActionAsync(Func<Task> action)
     {
         if (Controller.IsBusy)
             return;
         try
         {
             await action();
-            if (refresh)
-                RefreshStatus();
+            if (IsLoaded) RefreshStatus();
         }
         catch (Exception ex)
         {

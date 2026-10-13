@@ -4,6 +4,7 @@ public sealed class RuntimeActions(IRuntimeService runtime, IUserDialogs dialogs
 {
     public string GetStatus(string path) => runtime.GetStatus(path);
     public bool HasConfiguration => runtime.HasConfiguration;
+    public bool CanRemove(string path) => runtime.CanRemove(path);
 
     public async Task InstallAsync() => _ = await dialogs.RunAsync("Install / repair UE4SS", (p, t) => runtime.InstallAsync(p, t));
     public async Task RemoveAsync()

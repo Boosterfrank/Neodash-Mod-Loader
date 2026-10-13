@@ -96,9 +96,9 @@
                                 <TextBlock Text="{x:Bind Version}" ToolTipService.ToolTip="{x:Bind Version}" TextTrimming="CharacterEllipsis" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 <TextBlock Text="{x:Bind InstalledText}" ToolTipService.ToolTip="{x:Bind InstalledText}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" FontSize="12" />
                             </StackPanel>
-                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
                                 <Button Content="{x:Bind ButtonText, Mode=OneWay}" IsEnabled="{x:Bind IsButtonEnabled, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ButtonText, Mode=OneWay}" AutomationProperties.HelpText="{x:Bind Name}" Style="{ThemeResource AccentButtonStyle}" Click="InstallButton_Click" Tag="{x:Bind}" MinWidth="112" MinHeight="32" />
-                                <Button MinWidth="40" MinHeight="32" AutomationProperties.Name="Mod actions" AutomationProperties.HelpText="{x:Bind Name}" ToolTipService.ToolTip="Mod actions">
+                                <Button MinWidth="40" MinHeight="32" Visibility="{x:Bind ActionsVisibility, Mode=OneWay}" AutomationProperties.Name="Mod actions" AutomationProperties.HelpText="{x:Bind Name}" ToolTipService.ToolTip="Mod actions">
                                     <FontIcon Glyph="&#xE712;" FontSize="16" />
                                     <Button.Flyout>
                                         <MenuFlyout>

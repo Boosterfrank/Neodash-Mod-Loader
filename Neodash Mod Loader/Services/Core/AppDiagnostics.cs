@@ -23,7 +23,7 @@ public sealed class AppDiagnostics : IAppDiagnostics
 
     public string GetLocation(string name) => name switch
     {
-        "ue4ss" => Path.Combine(GamePathResolver.RequireGamePath(), "UE4SS.log"),
+        "ue4ss" => Ue4SsService.GetLogPath(GamePathResolver.RequireGamePath()),
         "crash" => Path.Combine(AppStorage.DirectoryPath, "crash.txt"),
         "config" => Path.Combine(GamePathResolver.RequireGamePath(), "UE4SS-settings.ini"),
         "settings" => AppStorage.DirectoryPath,
@@ -32,6 +32,23 @@ public sealed class AppDiagnostics : IAppDiagnostics
         "operations" => AppStorage.LogPath,
         _ => AppStorage.LogPath
     };
+
+    public bool CanOpenLocation(string name)
+    {
+        if (name == "ue4ss")
+        {
+            string path = GamePathResolver.GetNeodashWin64Path();
+            return path.Length > 0 && File.Exists(Ue4SsService.GetLogPath(path));
+        }
+        return name switch
+        {
+            "operations" => File.Exists(AppStorage.LogPath),
+            "crash" => File.Exists(Path.Combine(AppStorage.DirectoryPath, "crash.txt")),
+            "settings" => Directory.Exists(AppStorage.DirectoryPath),
+            "backups" => Directory.Exists(AppStorage.BackupsPath),
+            _ => false
+        };
+    }
     private static string CreateBackupsDirectory()
     {
         Directory.CreateDirectory(AppStorage.BackupsPath);

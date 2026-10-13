@@ -323,6 +323,7 @@ public sealed class ApplicationServicesTests
         public void Log(string message, Exception? exception = null) => LogCount++;
         public void LogCrash(Exception exception) => throw new NotSupportedException();
         public string GetLocation(string name) => throw new NotSupportedException();
+        public bool CanOpenLocation(string name) => throw new NotSupportedException();
     }
 
     private sealed class FakeSettings : ISettingsService
@@ -355,6 +356,7 @@ public sealed class ApplicationServicesTests
     {
         public bool Installed;
         public bool IsInstalled(string gamePath) => Installed;
+        public bool CanRemove(string gamePath) => throw new NotSupportedException();
         public string GetStatus(string gamePath) => "";
         public bool HasConfiguration => false;
 

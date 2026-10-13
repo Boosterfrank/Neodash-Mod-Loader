@@ -1,6 +1,7 @@
 namespace Neodash_Mod_Loader.Services;
 
-public sealed record SettingsPageState(string GamePath, string RuntimeStatus, bool HasGame, bool HasRuntimeConfiguration, string? LoadError, Version Version);
+public sealed record SettingsPageState(string GamePath, string RuntimeStatus, bool HasGame, bool HasRuntimeConfiguration,
+    bool CanRemoveRuntime, bool HasRuntimeLog, bool HasOperationLog, bool HasCrashLog, string? LoadError, Version Version);
 public sealed class SettingsPageController(PreferencesController preferences, GameFolderPicker folders, RuntimeActions runtime, DiagnosticActions diagnostics, AppUpdateCoordinator updates)
 {
     public string? Theme => preferences.Theme;
@@ -9,7 +10,9 @@ public sealed class SettingsPageController(PreferencesController preferences, Ga
     public SettingsPageState GetState()
     {
         string path = preferences.GamePath;
-        return new(path, runtime.GetStatus(path), path.Length > 0, path.Length > 0 && runtime.HasConfiguration, preferences.LoadError, diagnostics.Version);
+        return new(path, runtime.GetStatus(path), path.Length > 0, path.Length > 0 && runtime.HasConfiguration,
+            runtime.CanRemove(path), diagnostics.CanOpen("ue4ss"), diagnostics.CanOpen("operations"), diagnostics.CanOpen("crash"),
+            preferences.LoadError, diagnostics.Version);
     }
 
     public void SetTheme(string theme) => preferences.SetTheme(theme);
