@@ -153,7 +153,8 @@ public sealed partial class SettingsPage : Page
         try
         {
             string tag = (string)((Button)sender).Tag;
-            Controller.OpenLocation(tag);
+            await Controller.OpenLocationAsync(tag);
+            if (IsLoaded) RefreshStatus();
         }
         catch (Exception ex)
         {

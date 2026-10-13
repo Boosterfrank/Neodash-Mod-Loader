@@ -7,6 +7,16 @@ public interface IUiDispatcher
     void Post(Action action);
 }
 
+public interface IDesktopFiles
+{
+    bool CanOpenInCode { get; }
+    void OpenInCode(string folder);
+    Task<string?> PickFileAsync(params string[] extensions);
+    Task<string?> PickFolderAsync();
+    Task<string?> SaveFileAsync(string suggestedName, string extension);
+    void OpenPath(string path);
+}
+
 public enum UnsavedChangesChoice
 {
     Save,

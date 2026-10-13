@@ -21,16 +21,6 @@ public interface IDesktopDialogs : IUserDialogs
     Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog);
 }
 
-public interface IDesktopFiles
-{
-    bool CanOpenInCode { get; }
-    void OpenInCode(string folder);
-    Task<string?> PickFileAsync(params string[] extensions);
-    Task<string?> PickFolderAsync();
-    Task<string?> SaveFileAsync(string suggestedName, string extension);
-    void OpenPath(string path);
-}
-
 public interface IConfigurationEditor
 {
     Task EditModAsync(string name);

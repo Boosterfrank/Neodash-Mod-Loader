@@ -13,6 +13,7 @@
     <Compile Include="..\..\Neodash Mod Loader\Services\ApplicationContracts.cs" Link="Production\Services\ApplicationContracts.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ApplicationModels.cs" Link="Production\Services\ApplicationModels.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\PresentationContracts.cs" Link="Production\Services\PresentationContracts.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Services\DiagnosticActions.cs" Link="Production\Services\DiagnosticActions.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\EditableMod.cs" Link="Production\Services\EditableMod.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ModEditSession.cs" Link="Production\Services\ModEditSession.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\NavigationGuard.cs" Link="Production\Services\NavigationGuard.cs" />

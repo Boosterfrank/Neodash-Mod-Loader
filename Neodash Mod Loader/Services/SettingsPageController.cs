@@ -21,7 +21,7 @@ public sealed class SettingsPageController(PreferencesController preferences, Ga
     public void DetectGame() => preferences.DetectGame();
     public Task InstallRuntimeAsync() => runtime.InstallAsync();
     public Task RemoveRuntimeAsync() => runtime.RemoveAsync();
-    public void OpenLocation(string name) => diagnostics.Open(name);
+    public Task OpenLocationAsync(string name) => diagnostics.OpenAsync(name);
     public Task EditRuntimeAsync() => runtime.EditAsync();
     public Task CheckUpdatesAsync() => updates.CheckAsync(showUpToDate: true);
     public Task RestartSetupAsync() => preferences.RestartSetupAsync();
