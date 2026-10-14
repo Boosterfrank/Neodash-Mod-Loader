@@ -111,7 +111,7 @@ Application data is stored in:
 
 Open these locations from **Settings → Diagnostics and recovery**. Mods themselves remain in the selected game's `Win64/Mods` and `Win64/DisabledMods` folders.
 
-Older settings and profiles are supported, including legacy installed-version keys and unknown settings fields. If an existing settings or profile file cannot be read or validated, the app preserves it and blocks writes that would overwrite it. Back up the file before repairing it, and check the operation log for the reported error.
+Older settings and profiles are supported, including legacy installed-version keys and unknown settings fields. Settings resaved by version 1.3 after using a newer version are decoded on load; the next normal save writes installation lists and version mappings in the current format. If an existing settings or profile file cannot be read or validated, the app preserves it and blocks writes that would overwrite it. Back up the file before repairing it, and check the operation log for the reported error.
 
 UE4SS status detection accepts version numbers and prerelease/build labels without a hard-coded release list. It checks DLL metadata first, then the official startup banner in `UE4SS.log`, labelled **last run**. Both the legacy flat runtime location and the newer `ue4ss/UE4SS.dll` location are detected. Logs older than the selected DLL are ignored; an installation with no readable version is shown as installed.
 

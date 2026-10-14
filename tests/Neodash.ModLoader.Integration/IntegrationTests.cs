@@ -31,6 +31,9 @@ public sealed partial class IntegrationTests
     [Fact] public Task SemanticVersionOrdering() => AssertIsolatedAsync(nameof(SemanticVersionOrdering), _ => { VersionOrdering(); return Task.CompletedTask; });
     [Fact] public Task FileMoveRetriesRecoverTransientLocksAndPreserveFailures() => AssertIsolatedAsync(nameof(FileMoveRetriesRecoverTransientLocksAndPreserveFailures), _ => { FileMoveRetryBehavior(); return Task.CompletedTask; });
     [Fact] public Task SettingsJsonCompatibility() => AssertIsolatedAsync(nameof(SettingsJsonCompatibility), _ => { SettingsJsonCompatibilityCore(); return Task.CompletedTask; });
+    [Fact] public Task OldVersionSettingsResaveRemainsCompatible() => AssertIsolatedAsync(nameof(OldVersionSettingsResaveRemainsCompatible), scratch => { OldVersionSettingsResaveCompatibility(scratch); return Task.CompletedTask; });
+    [Fact] public Task InvalidLegacyCollectionSettingsArePreserved() => AssertIsolatedAsync(nameof(InvalidLegacyCollectionSettingsArePreserved), scratch => { InvalidLegacyCollectionSettings(scratch); return Task.CompletedTask; });
+    [Fact] public Task MixedAndEmptySettingsFormatsRemainCompatible() => AssertIsolatedAsync(nameof(MixedAndEmptySettingsFormatsRemainCompatible), _ => { MixedAndEmptySettingsFormats(); return Task.CompletedTask; });
     [Fact] public Task LegacySettingsMigrationKeepsProfilesAndSettingsCompatible() => IsLegacyMigrationChild() ? RunLegacyMigrationChildAsync() : AssertIsolatedAsync(nameof(LegacySettingsMigrationKeepsProfilesAndSettingsCompatible), LegacySettingsMigrationCompatibility);
     [Fact] public Task OperationCancellationAndRecoveryFailures() => AssertIsolatedAsync(nameof(OperationCancellationAndRecoveryFailures), _ => { OperationFailureSemantics(); return Task.CompletedTask; });
     [Fact] public Task CorruptSettingsArePreserved() => AssertIsolatedAsync(nameof(CorruptSettingsArePreserved), _ => { SettingsCorruptionIsPreserved(); return Task.CompletedTask; });

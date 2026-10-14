@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Neodash_Mod_Loader.Models;
 
 namespace Neodash_Mod_Loader
@@ -25,8 +26,7 @@ namespace Neodash_Mod_Loader
                 try
                 {
                     string json = File.ReadAllText(SettingsPath);
-                    var loaded = JsonSerializer.Deserialize(json, AppJsonContext.Default.AppSettings)
-                        ?? throw new JsonException("Settings must contain a JSON object.");
+                    var loaded = DeserializeSettings(json);
                     loaded.Installations ??= [];
                     loaded.Ue4ssInstallations ??= [];
                     loaded.AdditionalSettings ??= [];
@@ -69,6 +69,23 @@ namespace Neodash_Mod_Loader
         public static void EnsureWritable()
         {
             if (!_canSaveSettings) throw new InvalidOperationException(LoadError);
+        }
+
+        private static AppSettings DeserializeSettings(string json)
+        {
+            var document = JsonNode.Parse(json) as JsonObject
+                ?? throw new JsonException("Settings must contain a JSON object.");
+
+            // Version 1.3 stores top-level arrays/objects as JSON strings when it resaves newer settings.
+            // Decode only known collection fields; unknown settings and ordinary strings stay intact.
+            foreach (string name in new[] { "Installations", "Ue4ssInstallations", "InstalledMods" })
+            {
+                if (document[name] is JsonValue value && value.TryGetValue<string>(out string? encoded))
+                    document[name] = JsonNode.Parse(encoded);
+            }
+
+            return JsonSerializer.Deserialize(document.ToJsonString(), AppJsonContext.Default.AppSettings)
+                ?? throw new JsonException("Settings must contain a JSON object.");
         }
 
         private static void ValidateSettings(AppSettings settings)
