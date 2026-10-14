@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Neodash_Mod_Loader.Services;
+using Neodash_Mod_Loader.Ui;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using Windows.UI.ViewManagement;
@@ -133,9 +134,7 @@ public sealed partial class HomePage : Page
             2 => items.Where(mod => !mod.IsEnabled),
             _ => items
         };
-        FilteredMods.Clear();
-        foreach (ModItem mod in items)
-            FilteredMods.Add(mod);
+        ObservableCollectionSync.Update(FilteredMods, items);
         bool canEdit = _controller is { IsBusy: false, LoadError: null } && _controller.HasGame;
         BulkTools.IsEnabled = canEdit && FilteredMods.Count > 0;
         EnableAllShownItem.IsEnabled = canEdit && FilteredMods.Any(mod => !mod.IsEnabled);
@@ -148,10 +147,16 @@ public sealed partial class HomePage : Page
     {
         if (_controller is null)
             return;
+        var names = _controller.Profiles.Select(profile => profile.Name).ToList();
         _isUpdatingProfiles = true;
-        ProfileComboBox.ItemsSource = _controller.Profiles.Select(profile => profile.Name).ToList();
-        ProfileComboBox.SelectedItem = _controller.ActiveProfile.Name;
-        _isUpdatingProfiles = false;
+        try
+        {
+            if (ProfileComboBox.ItemsSource is not List<string> rendered || !rendered.SequenceEqual(names))
+                ProfileComboBox.ItemsSource = names;
+            if (!Equals(ProfileComboBox.SelectedItem, _controller.ActiveProfile.Name))
+                ProfileComboBox.SelectedItem = _controller.ActiveProfile.Name;
+        }
+        finally { _isUpdatingProfiles = false; }
     }
 
     private void ModTabContent_Loaded(object sender, RoutedEventArgs e)

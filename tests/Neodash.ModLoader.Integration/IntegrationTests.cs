@@ -27,6 +27,10 @@ public sealed partial class IntegrationTests
     [Fact] public Task UnsafeSnapshotsNamesAndJunctions() => AssertIsolatedAsync(nameof(UnsafeSnapshotsNamesAndJunctions), scratch => { UnsafeSnapshotsAndFolders(scratch); return Task.CompletedTask; });
     [Fact] public Task ModManagerEnableMigrationAndRollback() => AssertIsolatedAsync(nameof(ModManagerEnableMigrationAndRollback), scratch => { ModManagerBehavior(scratch); return Task.CompletedTask; });
     [Fact] public Task ProfileCrudImportExportAndValidation() => AssertIsolatedAsync(nameof(ProfileCrudImportExportAndValidation), scratch => { ProfileBehavior(scratch); return Task.CompletedTask; });
+    [Fact] public Task UnversionedProfilesMigrateWithoutDataLoss() => AssertIsolatedAsync(nameof(UnversionedProfilesMigrateWithoutDataLoss), scratch => { LegacyProfileMigration(scratch); return Task.CompletedTask; });
+    [Fact] public Task VersionedProfileImportExportPreservesMetadata() => AssertIsolatedAsync(nameof(VersionedProfileImportExportPreservesMetadata), scratch => { ProfileMetadataRoundTrip(scratch); return Task.CompletedTask; });
+    [Fact] public Task ProfileImportFailurePreservesProfilesAndMetadata() => AssertIsolatedAsync(nameof(ProfileImportFailurePreservesProfilesAndMetadata), scratch => { ProfileImportRollback(scratch); return Task.CompletedTask; });
+    [Fact] public Task UnsupportedProfileSchemasCannotBeImported() => AssertIsolatedAsync(nameof(UnsupportedProfileSchemasCannotBeImported), scratch => { ProfileImportSchemaGuard(scratch); return Task.CompletedTask; });
     [Fact] public Task CatalogPathSafetyAndGameDiscovery() => AssertIsolatedAsync(nameof(CatalogPathSafetyAndGameDiscovery), scratch => { CatalogAndPathBehavior(scratch); return Task.CompletedTask; });
     [Fact] public Task SemanticVersionOrdering() => AssertIsolatedAsync(nameof(SemanticVersionOrdering), _ => { VersionOrdering(); return Task.CompletedTask; });
     [Fact] public Task FileMoveRetriesRecoverTransientLocksAndPreserveFailures() => AssertIsolatedAsync(nameof(FileMoveRetriesRecoverTransientLocksAndPreserveFailures), _ => { FileMoveRetryBehavior(); return Task.CompletedTask; });

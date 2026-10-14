@@ -88,7 +88,7 @@ public sealed partial class IntegrationTests
 
     private static async Task SemanticProfileCorruptionIsPreserved(string scratch)
     {
-        string[] invalidDocuments =
+        List<string> invalidDocuments =
         [
             "{\"activeProfile\":\"One\",\"profiles\":[{\"name\":\"One\",\"enabledMods\":[]},{\"name\":\"one\",\"enabledMods\":[]}]}",
             "{\"activeProfile\":\"One\",\"profiles\":[null]}",
@@ -96,7 +96,9 @@ public sealed partial class IntegrationTests
             "{\"activeProfile\":\"Lost\",\"profiles\":[]}",
             "{\"activeProfile\":\"One\",\"profiles\":[{\"name\":\"One\",\"gamePath\":\"relative\",\"enabledMods\":[]}]}"
         ];
-        for (int index = 0; index < invalidDocuments.Length; index++)
+        foreach (string schema in new[] { "2", "0", "-1", "null", "\"1\"", "1.5", "2147483648" })
+            invalidDocuments.Add("{\"schemaVersion\":" + schema + ",\"profiles\":{\"future\":true}}");
+        for (int index = 0; index < invalidDocuments.Count; index++)
         {
             string storage = Path.Combine(scratch, "profile-corrupt-" + index);
             Directory.CreateDirectory(storage);
@@ -121,8 +123,14 @@ public sealed partial class IntegrationTests
             Console.Error.WriteLine("Expected semantically corrupt profile data to be non-writable.");
             return 1;
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            using var document = JsonDocument.Parse(original);
+            if (document.RootElement.TryGetProperty("schemaVersion", out var schema)
+                && schema.ValueKind == JsonValueKind.Number && schema.TryGetInt32(out int version) && version == 2)
+                Assert(ex.Message.Contains("newer version", StringComparison.Ordinal), "unsupported local schemas explain the required loader upgrade before reading incompatible contents");
+            AssertThrows<InvalidOperationException>(() => ProfileManager.CreateProfile("Must not be saved"), "unreadable profile stores cannot be replaced by a default profile");
+            AssertThrows<InvalidOperationException>(() => ProfileManager.ExportProfile(path), "export cannot bypass the write guard for unreadable profile stores");
             if (!File.ReadAllBytes(path).SequenceEqual(original))
             {
                 Console.Error.WriteLine("Profile validation changed the source file.");

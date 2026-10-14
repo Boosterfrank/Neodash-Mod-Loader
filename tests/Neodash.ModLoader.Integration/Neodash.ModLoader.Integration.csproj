@@ -15,6 +15,7 @@
     <Compile Include="..\..\Neodash Mod Loader\Services\PresentationContracts.cs" Link="Production\Services\PresentationContracts.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\DiagnosticActions.cs" Link="Production\Services\DiagnosticActions.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\EditableMod.cs" Link="Production\Services\EditableMod.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\Ui\ObservableCollectionSync.cs" Link="Production\Ui\ObservableCollectionSync.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ModEditSession.cs" Link="Production\Services\ModEditSession.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\NavigationGuard.cs" Link="Production\Services\NavigationGuard.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ModOperationMessages.cs" Link="Production\Services\ModOperationMessages.cs" />
@@ -33,6 +34,7 @@
     <Compile Include="..\..\Neodash Mod Loader\SettingsMigration.cs" Link="Production\SettingsMigration.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Ue4ssService.cs" Link="Production\Ue4ssService.cs" />
     <Compile Include="..\..\Neodash Mod Loader\ProfileManager.cs" Link="Production\ProfileManager.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ProfileJsonFormat.cs" Link="Production\ProfileJsonFormat.cs" />
     <Compile Include="..\..\Neodash Mod Loader\GamePathResolver.cs" Link="Production\GamePathResolver.cs" />
     <Compile Include="..\..\Neodash Mod Loader\GameProcessMatcher.cs" Link="Production\GameProcessMatcher.cs" />
     <Compile Include="..\..\Neodash Mod Loader\SafePaths.cs" Link="Production\SafePaths.cs" />

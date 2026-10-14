@@ -36,4 +36,4 @@ For an incompatible change:
 3. Prove rejection leaves original bytes unchanged, and prove all new writes use the current canonical schema. Include unsupported future-version fixtures so older readers cannot overwrite newer data.
 4. Run `eng/Verify.ps1` before publishing.
 
-Profiles and package backup manifests have separate persistence contracts; changing settings does not silently migrate those files.
+Profiles have their own [versioned contract and migration rules](profiles-format.md). Package backup manifests also have a separate persistence contract; changing settings does not silently migrate those files.

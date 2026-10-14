@@ -10,7 +10,7 @@ public static class ProfileManager
     private const string DefaultProfileName = "Default";
     private static readonly string ProfilesDirectory = AppStorage.DirectoryPath;
     private static readonly string ProfilesPath = Path.Combine(ProfilesDirectory, "profiles.json");
-    private static bool _profileFileIsCorrupt;
+    private static string? _loadError;
     private static readonly ModProfileData Data = LoadProfiles();
 
     public static IReadOnlyList<ModProfile> Profiles => Data.Profiles;
@@ -23,14 +23,13 @@ public static class ProfileManager
         {
             if (File.Exists(ProfilesPath))
             {
-                data = JsonSerializer.Deserialize(File.ReadAllText(ProfilesPath), AppJsonContext.Default.ModProfileData)
-                    ?? throw new JsonException("profiles.json contained null.");
+                data = ProfileJsonFormat.Deserialize(File.ReadAllText(ProfilesPath));
                 ValidateLoadedData(data);
             }
         }
         catch (Exception ex)
         {
-            _profileFileIsCorrupt = true;
+            _loadError = ex.Message;
             AppStorage.Log("profiles.json could not be read; it will not be overwritten.", ex);
             data = null;
         }
@@ -70,8 +69,8 @@ public static class ProfileManager
     /// <summary>Fails before mod filesystem work when profiles.json is unreadable, preserving the original recovery file.</summary>
     public static void EnsureWritable()
     {
-        if (_profileFileIsCorrupt)
-            throw new InvalidOperationException($"Profile data is corrupt. It was preserved at '{ProfilesPath}'. Fix or move that file before changing installed mods.");
+        if (_loadError is not null)
+            throw new InvalidOperationException($"Profiles could not be loaded. The file was preserved at '{ProfilesPath}': {_loadError}");
     }
 
     private static List<string> NormalizeMods(IEnumerable<string>? names) => names?
@@ -92,7 +91,8 @@ public static class ProfileManager
     private static void SaveProfiles()
     {
         EnsureWritable();
-        string content = JsonSerializer.Serialize(Data, AppJsonContext.Default.ModProfileData);
+        ValidateLoadedData(Data);
+        string content = ProfileJsonFormat.Serialize(Data);
         WriteAtomically(ProfilesPath, content);
     }
 
@@ -253,17 +253,22 @@ public static class ProfileManager
         }
     }
 
-    /// <summary>Exports only the active profile's name and enabled folder set using the normal profile JSON envelope.</summary>
+    /// <summary>Exports the active profile and retained metadata, omitting its local game binding for portability.</summary>
     public static void ExportProfile(string path)
     {
+        EnsureWritable();
         if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("Choose a profile export path.", nameof(path));
+        if (string.Equals(Path.GetFullPath(path), ProfilesPath, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Choose an export file outside the loader's profiles.json so your other profiles are preserved.");
         var active = ActiveProfile;
         var export = new ModProfileData
         {
             ActiveProfile = active.Name,
-            Profiles = [new ModProfile { Name = active.Name, EnabledMods = NormalizeMods(active.EnabledMods), GamePath = null }]
+            Profiles = [new ModProfile { Name = active.Name, EnabledMods = NormalizeMods(active.EnabledMods), AdditionalData = new(active.AdditionalData) }],
+            AdditionalData = new(Data.AdditionalData)
         };
-        WriteAtomically(path, JsonSerializer.Serialize(export, AppJsonContext.Default.ModProfileData));
+        ValidateLoadedData(export);
+        WriteAtomically(path, ProfileJsonFormat.Serialize(export));
     }
 
     /// <summary>Imports one named enabled-mod set and leaves the current game files untouched.</summary>
@@ -271,18 +276,37 @@ public static class ProfileManager
     {
         EnsureWritable();
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) throw new FileNotFoundException("The selected profile file was not found.", path);
-        ModProfileData? imported;
-        try { imported = JsonSerializer.Deserialize(File.ReadAllText(path), AppJsonContext.Default.ModProfileData); }
-        catch (JsonException ex) { throw new InvalidOperationException("The selected file is not a valid Neodash profile export.", ex); }
-        if (imported?.Profiles is not { Count: 1 }) throw new InvalidOperationException("A profile export must contain exactly one profile.");
-        ModProfile source = imported.Profiles[0] ?? throw new InvalidOperationException("The profile export is empty.");
+        ModProfileData imported;
+        try
+        {
+            imported = ProfileJsonFormat.Deserialize(File.ReadAllText(path));
+            ValidateLoadedData(imported);
+        }
+        catch (JsonException ex) { throw new InvalidOperationException($"The selected file could not be imported: {ex.Message}", ex); }
+        if (imported.Profiles.Count != 1) throw new InvalidOperationException("A profile export must contain exactly one profile.");
+        ModProfile source = imported.Profiles[0];
         string? error = ValidateName(source.Name);
         if (error is not null) throw new InvalidOperationException(error);
-        var profile = new ModProfile { Name = source.Name.Trim(), EnabledMods = NormalizeMods(source.EnabledMods), GamePath = null };
+        var profile = new ModProfile { Name = source.Name.Trim(), EnabledMods = NormalizeMods(source.EnabledMods), AdditionalData = new(source.AdditionalData) };
+        var previousData = Data.AdditionalData;
+        var mergedData = MergeImportedMetadata(imported.AdditionalData);
         Data.Profiles.Add(profile);
+        Data.AdditionalData = mergedData;
         try { SaveProfiles(); }
-        catch { Data.Profiles.Remove(profile); throw; }
+        catch { Data.Profiles.Remove(profile); Data.AdditionalData = previousData; throw; }
         return profile;
+    }
+
+    private static Dictionary<string, JsonElement> MergeImportedMetadata(Dictionary<string, JsonElement> imported)
+    {
+        var merged = new Dictionary<string, JsonElement>(Data.AdditionalData);
+        foreach (var (key, value) in imported)
+        {
+            if (merged.TryGetValue(key, out var existing) && !JsonElement.DeepEquals(existing, value))
+                throw new InvalidOperationException($"The profile export contains conflicting metadata '{key}'. Neither file has been changed.");
+            merged[key] = value;
+        }
+        return merged;
     }
 
     public static void SyncActiveProfile(string win64Path)
