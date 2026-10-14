@@ -45,6 +45,7 @@ public sealed partial class IntegrationTests
             Assert(SettingsManager.LoadError is null, "new settings resaved by version 1.3 load successfully");
             Assert(File.ReadAllBytes(settingsPath).SequenceEqual(original), "loading migration preserves the original file until a normal save");
             var loaded = SettingsManager.Current;
+            Assert(loaded.SchemaVersion == AppSettings.CurrentSchemaVersion, "the old writer preserves the numeric storage version");
             Assert(loaded.AppTheme == "Light" && loaded.IsSetupComplete && loaded.ModsTxtMigrated && loaded.GameDirectory == paths.Game,
                 "round trips preserve theme, setup, migration state, and game selection");
             var installation = loaded.Installations.Single();
@@ -67,6 +68,7 @@ public sealed partial class IntegrationTests
             SettingsManager.SaveSettings();
             currentJson = File.ReadAllText(settingsPath);
             using var saved = JsonDocument.Parse(currentJson);
+            Assert(saved.RootElement.GetProperty("SchemaVersion").GetInt32() == 1, "normal saves keep the version-one storage contract");
             Assert(saved.RootElement.GetProperty("Installations").ValueKind == JsonValueKind.Array
                 && saved.RootElement.GetProperty("Ue4ssInstallations").ValueKind == JsonValueKind.Array
                 && saved.RootElement.GetProperty("InstalledMods").ValueKind == JsonValueKind.Object,

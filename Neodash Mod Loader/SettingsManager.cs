@@ -76,6 +76,12 @@ namespace Neodash_Mod_Loader
             var document = JsonNode.Parse(json) as JsonObject
                 ?? throw new JsonException("Settings must contain a JSON object.");
 
+            int schemaVersion = 1; // Unversioned files use the original settings schema.
+            if (document.TryGetPropertyValue(nameof(AppSettings.SchemaVersion), out var schema)
+                && (schema is not JsonValue versionValue || !versionValue.TryGetValue<int>(out schemaVersion)))
+                throw new JsonException("Settings SchemaVersion must be an integer.");
+            ValidateSchemaVersion(schemaVersion);
+
             // Version 1.3 stores top-level arrays/objects as JSON strings when it resaves newer settings.
             // Decode only known collection fields; unknown settings and ordinary strings stay intact.
             foreach (string name in new[] { "Installations", "Ue4ssInstallations", "InstalledMods" })
@@ -90,9 +96,20 @@ namespace Neodash_Mod_Loader
 
         private static void ValidateSettings(AppSettings settings)
         {
+            ValidateSchemaVersion(settings.SchemaVersion);
             if (!string.IsNullOrWhiteSpace(settings.GameDirectory)) ValidateGamePath(settings.GameDirectory);
             ValidateModRecords(settings.Installations);
             ValidateRuntimeRecords(settings.Ue4ssInstallations);
+        }
+
+        private static void ValidateSchemaVersion(int version)
+        {
+            if (version > AppSettings.CurrentSchemaVersion)
+                throw new JsonException($"Settings format {version} requires a newer version of Neodash Mod Loader. Your settings will not be overwritten.");
+            if (version < 1)
+                throw new JsonException("Settings SchemaVersion must be a positive integer.");
+            if (version != AppSettings.CurrentSchemaVersion)
+                throw new JsonException($"Settings format {version} needs a migration that this build does not support. Your settings will not be overwritten.");
         }
 
         private static void ValidateModRecords(IEnumerable<InstalledModRecord> records)

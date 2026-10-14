@@ -6,6 +6,9 @@ namespace Neodash_Mod_Loader.Models
 {
     public class AppSettings
     {
+        // Storage versions change only for incompatible schema changes, independently of app releases.
+        public const int CurrentSchemaVersion = 1;
+        public int SchemaVersion { get; set; } = CurrentSchemaVersion;
         public string? AppTheme { get; set; } = "Dark";
         public bool IsSetupComplete { get; set; }
         public bool ModsTxtMigrated { get; set; }
