@@ -1,9 +1,17 @@
 namespace Neodash_Mod_Loader.Services;
 
-public sealed class DiagnosticActions(IAppDiagnostics diagnostics, IDesktopFiles files, IUserDialogs dialogs)
+public sealed class DiagnosticActions(IAppDiagnostics diagnostics, IDesktopFiles files, IUserDialogs dialogs, IDesktopClipboard clipboard)
 {
     public Version Version => diagnostics.Version;
     public string? CommitHash => diagnostics.CommitHash;
+
+    public bool CopyCommit()
+    {
+        string? hash = CommitHash;
+        if (string.IsNullOrWhiteSpace(hash)) return false;
+        clipboard.SetText(hash);
+        return true;
+    }
 
     public async Task OpenAsync(string name)
     {

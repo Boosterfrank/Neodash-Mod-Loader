@@ -4,14 +4,27 @@
     xmlns:ui="using:Neodash_Mod_Loader.UI"
     Background="Transparent">
     <Page.Resources>
-        <Style x:Key="SettingsGroupStyle" TargetType="Border">
-            <Setter Property="Padding" Value="16" /><Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" /><Setter Property="BorderThickness" Value="1" />
-        </Style>
-        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="18" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="TextWrapping" Value="Wrap" />
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="GitCommitLinkBrush" Color="#60CDFF" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="GitCommitLinkBrush" Color="#0067C0" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="GitCommitLinkBrush" Color="{ThemeResource SystemColorHotlightColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <Style x:Key="SettingsGroupStyle" TargetType="Border">
+                <Setter Property="Padding" Value="16" /><Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" /><Setter Property="BorderThickness" Value="1" />
+            </Style>
+            <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="18" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+        </ResourceDictionary>
     </Page.Resources>
     <ScrollViewer Padding="16,12,16,16" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
         <StackPanel Spacing="16">
@@ -141,7 +154,37 @@
                                 <Grid x:Name="AboutRow" ColumnSpacing="24" RowSpacing="8">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                                        <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><Image Source="/Assets/Package/StoreLogo.png" Width="40" Height="40" VerticalAlignment="Center" /><StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center"><TextBlock Text="Neodash Mod Loader" FontWeight="SemiBold" TextWrapping="Wrap" /><TextBlock x:Name="AppVersionText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" IsTextSelectionEnabled="True" /><TextBlock x:Name="GitCommitText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Select and copy this commit when reporting an issue." /><TextBlock Text="A simple and elegant mod loader for Neodash." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" /></StackPanel></Grid>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Image Source="/Assets/Package/StoreLogo.png" Width="40" Height="40" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                                <TextBlock Text="Neodash Mod Loader" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="AppVersionText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                                <Grid x:Name="GitCommitDetails" ColumnSpacing="8" MaxWidth="640" HorizontalAlignment="Left" Visibility="Collapsed">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                        <Run Text="Git commit " />
+                                                        <Hyperlink x:Name="GitCommitLink" Foreground="{ThemeResource GitCommitLinkBrush}" AutomationProperties.Name="View Git commit on GitHub">
+                                                            <Run x:Name="GitCommitHash" />
+                                                        </Hyperlink>
+                                                    </TextBlock>
+                                                    <Button x:Name="CopyCommitButton" Grid.Column="1" Click="CopyCommitButton_Click" Padding="8,4" MinWidth="88" MinHeight="32" VerticalAlignment="Center" AutomationProperties.Name="Copy Git commit" ToolTipService.ToolTip="Copy the full Git commit hash">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                                                            <TextBlock x:Name="CopyCommitLabel" Text="Copy" AutomationProperties.LiveSetting="Polite" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <TextBlock x:Name="GitCommitUnavailableText" Text="Git commit unavailable" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                                <TextBlock Text="A simple and elegant mod loader for Neodash." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Grid>
                                         <Button x:Name="CheckUpdatesButton" Grid.Column="1" Content="Check for updates" Style="{StaticResource DesktopActionButtonStyle}" VerticalAlignment="Center" />
                                     </Grid>
                             </StackPanel>

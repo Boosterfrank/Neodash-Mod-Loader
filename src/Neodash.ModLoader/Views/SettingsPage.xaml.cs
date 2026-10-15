@@ -61,7 +61,27 @@ public sealed partial class SettingsPage : Page
         SettingsRecoveryBar.IsOpen = state.LoadError is not null;
         SettingsControls.IsEnabled = state.LoadError is null;
         AppVersionText.Text = "Version " + state.Version;
-        GitCommitText.Text = state.CommitHash is { } hash ? "Git commit " + hash : "Git commit unavailable";
+        bool hasCommit = state.CommitHash is not null;
+        GitCommitDetails.Visibility = hasCommit ? Visibility.Visible : Visibility.Collapsed;
+        GitCommitUnavailableText.Visibility = hasCommit ? Visibility.Collapsed : Visibility.Visible;
+        CopyCommitButton.IsEnabled = hasCommit;
+        CopyCommitLabel.Text = "Copy";
+        GitCommitHash.Text = state.CommitHash ?? string.Empty;
+        GitCommitLink.NavigateUri = state.CommitHash is { } hash
+            ? new Uri(Properties.ResourceStrings.GetRequired("GitCommitBaseUrl") + hash)
+            : null;
+    }
+
+    private async void CopyCommitButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (Controller.CopyCommit()) CopyCommitLabel.Text = "Copied";
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync(ex);
+        }
     }
 
     private async void RetrySettingsButton_Click(object sender, RoutedEventArgs e)

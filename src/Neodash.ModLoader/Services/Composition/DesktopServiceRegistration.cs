@@ -16,6 +16,7 @@ public static class DesktopServiceRegistration
         services.AddScoped<IDesktopDialogs, UiOperations>();
         services.AddScoped<IUserDialogs>(provider => provider.GetRequiredService<IDesktopDialogs>());
         services.AddScoped<IDesktopFiles, UiFiles>();
+        services.AddScoped<IDesktopClipboard, UiClipboard>();
         services.AddScoped<IConfigurationEditor, UiConfigurationEditor>();
         services.AddScoped<IModEditSession, ModEditSession>();
         services.AddScoped<INavigationGuard, NavigationGuard>();

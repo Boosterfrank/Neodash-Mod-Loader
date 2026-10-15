@@ -12,10 +12,46 @@ public sealed class DiagnosticActionsTests
     public void BuildCommitIsExposedThroughDiagnostics()
     {
         const string hash = "0123456789abcdef0123456789abcdef01234567";
-        var actions = new DiagnosticActions(new FakeDiagnostics { CommitHash = hash }, new FakeFiles(), new FakeDialogs());
+        var actions = new DiagnosticActions(new FakeDiagnostics { CommitHash = hash }, new FakeFiles(), new FakeDialogs(), new FakeClipboard());
 
         Assert.Equal(hash, actions.CommitHash);
         Assert.Equal(new Version(1, 4), actions.Version);
+    }
+
+    [Theory]
+    [InlineData("0123456789abcdef0123456789abcdef01234567")]
+    [InlineData("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")]
+    public void CopyCommitCopiesFullHash(string hash)
+    {
+        var clipboard = new FakeClipboard();
+        var actions = new DiagnosticActions(new FakeDiagnostics { CommitHash = hash }, new FakeFiles(), new FakeDialogs(), clipboard);
+
+        Assert.True(actions.CopyCommit());
+        Assert.Equal(hash, Assert.Single(clipboard.CopiedText));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void UnavailableCommitDoesNotChangeClipboard(string? hash)
+    {
+        var clipboard = new FakeClipboard();
+        var actions = new DiagnosticActions(new FakeDiagnostics { CommitHash = hash }, new FakeFiles(), new FakeDialogs(), clipboard);
+
+        Assert.False(actions.CopyCommit());
+        Assert.Empty(clipboard.CopiedText);
+    }
+
+    [Fact]
+    public void ClipboardFailureIsNotReportedAsSuccess()
+    {
+        var error = new InvalidOperationException("Clipboard is unavailable.");
+        var clipboard = new FakeClipboard { CopyError = error };
+        var actions = new DiagnosticActions(new FakeDiagnostics { CommitHash = "0123456789abcdef0123456789abcdef01234567" }, new FakeFiles(), new FakeDialogs(), clipboard);
+
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() => { actions.CopyCommit(); }));
+        Assert.Empty(clipboard.CopiedText);
     }
 
     [Fact]
@@ -27,7 +63,7 @@ public sealed class DiagnosticActionsTests
             var files = new FakeFiles();
             var dialogs = new FakeDialogs();
 
-            await new DiagnosticActions(diagnostics, files, dialogs).OpenAsync(name);
+            await new DiagnosticActions(diagnostics, files, dialogs, new FakeClipboard()).OpenAsync(name);
 
             Assert.Empty(files.OpenedPaths);
             Assert.Equal(0, diagnostics.LocationRequests);
@@ -47,7 +83,7 @@ public sealed class DiagnosticActionsTests
                 var files = new FakeFiles { OpenError = error };
                 var dialogs = new FakeDialogs();
 
-                await new DiagnosticActions(diagnostics, files, dialogs).OpenAsync(name);
+                await new DiagnosticActions(diagnostics, files, dialogs, new FakeClipboard()).OpenAsync(name);
 
                 Assert.Equal(name + ".txt", Assert.Single(files.OpenedPaths));
                 Assert.Equal("Log unavailable", Assert.Single(dialogs.Messages).Title);
@@ -65,7 +101,7 @@ public sealed class DiagnosticActionsTests
             var files = new FakeFiles();
             var dialogs = new FakeDialogs();
 
-            await new DiagnosticActions(diagnostics, files, dialogs).OpenAsync(name);
+            await new DiagnosticActions(diagnostics, files, dialogs, new FakeClipboard()).OpenAsync(name);
 
             Assert.Equal(name + ".txt", Assert.Single(files.OpenedPaths));
             Assert.Empty(dialogs.Messages);
@@ -81,7 +117,7 @@ public sealed class DiagnosticActionsTests
             var diagnostics = new FakeDiagnostics { Available = true };
             var files = new FakeFiles { OpenError = error };
             var dialogs = new FakeDialogs();
-            var actions = new DiagnosticActions(diagnostics, files, dialogs);
+            var actions = new DiagnosticActions(diagnostics, files, dialogs, new FakeClipboard());
 
             Assert.Same(error, await Assert.ThrowsAnyAsync<Exception>(() => actions.OpenAsync("crash")));
             Assert.Single(files.OpenedPaths);
@@ -99,12 +135,24 @@ public sealed class DiagnosticActionsTests
                 var diagnostics = new FakeDiagnostics { Available = false };
                 var files = new FakeFiles { OpenError = error };
                 var dialogs = new FakeDialogs();
-                var actions = new DiagnosticActions(diagnostics, files, dialogs);
+                var actions = new DiagnosticActions(diagnostics, files, dialogs, new FakeClipboard());
 
                 Assert.Same(error, await Assert.ThrowsAnyAsync<Exception>(() => actions.OpenAsync(name)));
                 Assert.Equal(name + ".txt", Assert.Single(files.OpenedPaths));
                 Assert.Empty(dialogs.Messages);
             }
+        }
+    }
+
+    private sealed class FakeClipboard : IDesktopClipboard
+    {
+        public List<string> CopiedText { get; } = [];
+        public Exception? CopyError { get; init; }
+
+        public void SetText(string text)
+        {
+            if (CopyError is not null) throw CopyError;
+            CopiedText.Add(text);
         }
     }
 

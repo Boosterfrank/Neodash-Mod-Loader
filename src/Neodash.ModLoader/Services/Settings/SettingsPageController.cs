@@ -17,6 +17,7 @@ public sealed class SettingsPageController(PreferencesController preferences, Ga
     public Task InstallRuntimeAsync() => runtime.InstallAsync();
     public Task RemoveRuntimeAsync() => runtime.RemoveAsync();
     public Task OpenLocationAsync(string name) => diagnostics.OpenAsync(name);
+    public bool CopyCommit() => diagnostics.CopyCommit();
     public Task EditRuntimeAsync() => runtime.EditAsync();
     public Task CheckUpdatesAsync() => updates.CheckAsync(showUpToDate: true);
     public Task RestartSetupAsync() => preferences.RestartSetupAsync();

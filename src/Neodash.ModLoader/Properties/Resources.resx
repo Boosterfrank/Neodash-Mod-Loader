@@ -113,4 +113,7 @@
 	<data name="ModLibraryUrl" xml:space="preserve">
 		<value>https://neodashweb.pages.dev/modloader/mods/modlist.json</value>
 	</data>
+	<data name="GitCommitBaseUrl" xml:space="preserve">
+		<value>https://github.com/Boosterfrank/Neodash-Mod-Loader/commit/</value>
+	</data>
 </root>
