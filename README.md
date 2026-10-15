@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Neodash%20Mod%20Loader/Assets/neodash%20mod%20loader%20logo%20no%20bg.png" width="144" alt="Neodash Mod Loader logo" />
+  <img src="src/Neodash.ModLoader/Assets/Branding/AppLogo.png" width="144" alt="Neodash Mod Loader logo" />
 </p>
 
 <h1 align="center">Neodash Mod Loader</h1>
@@ -77,7 +77,7 @@ Use the mod's action menu → **Open in VS Code** to edit its script folder. The
 
 For Lua API examples and the script layout, see the official [UE4SS Lua mod guide](https://docs.ue4ss.com/dev/guides/creating-a-lua-mod.html).
 
-Supported packages contain UE4SS mod folders, such as a folder with `Scripts/`, `Script/main.lua`, or `dlls/`. ZIP packages may contain several mod folders or a supported wrapper layout. Archives containing a single mod directly at the root can be imported with a chosen folder name. See the [installer](Neodash%20Mod%20Loader/ModPackageInstaller.cs) for the exact validation rules.
+Supported packages contain UE4SS mod folders, such as a folder with `Scripts/`, `Script/main.lua`, or `dlls/`. ZIP packages may contain several mod folders or a supported wrapper layout. Archives containing a single mod directly at the root can be imported with a chosen folder name. See the [installer](src/Neodash.ModLoader/Core/Mods/ModPackageInstaller.cs) for the exact validation rules.
 
 The **Entry point** column shows a mod's native DLL, Lua script, or both. Package updates replace the old mod folders, removing obsolete DLLs while keeping supported user configuration and a recovery snapshot. UE4SS updates also remove obsolete runtime DLLs recorded for that game; unrelated DLLs and files inside user mod folders are preserved.
 
@@ -175,6 +175,12 @@ For a development build:
 ./scripts/build.ps1 --debug
 ```
 
+Run the app from source with:
+
+```powershell
+dotnet run --project src/Neodash.ModLoader/Neodash.ModLoader.csproj
+```
+
 Release builds automatically publish `artifacts/publish/Neodash Mod Loader.exe`, including the .NET and Windows App SDK runtimes, assets, and native dependencies. Distribute that one file. The DLLs under `bin/` are intermediate build output. Set `-p:PublishReleaseAfterBuild=false` to skip the packaging step when only compiling.
 
 The build script requires PowerShell 7.2 or later, restores dependencies automatically, builds Windows x64, and saves a unique MSBuild binary log under `artifacts/logs/`. It works from any working directory. PowerShell's `-Debug` spelling is also accepted. To run the complete regression suite, coverage, and publish verification, use `./eng/Verify.ps1`.
@@ -195,21 +201,26 @@ Pages keep rendering, bindings, focus, and animation in their code-behind. Contr
 
 WinUI `Frame` still creates pages and handles navigation transitions. `PageActivation` is the single bridge that supplies each framework-created page with its scoped controller. Pages never resolve services from a global container or another page.
 
-`Services/Core/` adapts the existing transaction and persistence managers, retaining their package ownership, path checks, rollback, and legacy settings formats. Add filesystem or settings operations there, expose them through a focused interface, and keep page code free of direct I/O. Register new services in `CoreServiceRegistration` or `DesktopServiceRegistration`; test workflows with injected fakes and persistence changes with the isolated filesystem scenarios.
+`Core/` owns transactions, package installation, persistence, and recovery. `Services/Adapters/` exposes those operations through the application interfaces, retaining package ownership, path checks, rollback, and legacy settings formats. Register shared adapters in `Services/Composition/CoreServiceRegistration` and window-scoped UI services in `DesktopServiceRegistration`. Keep page code free of direct I/O. See the [architecture guide](docs/architecture.md) for ownership, naming, dependency boundaries, and test placement.
 
 ### Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `Neodash Mod Loader/Views/` | WinUI rendering, bindings, focus, and interaction events. |
-| `Neodash Mod Loader/Services/` | DI registrations, feature controllers, navigation, and window-scoped workflows. |
-| `Neodash Mod Loader/Services/Core/` | UI-free adapters for game access, settings, profiles, packages, runtime, and diagnostics. |
-| `Neodash Mod Loader/Models/` | Settings, profiles, catalog entries, and installation records. |
-| `Neodash Mod Loader/*.cs` | Mod operations, package installation, persistence, and recovery services. |
+| `Neodash.ModLoader.slnx` | Application and test solution. |
+| `src/Neodash.ModLoader/` | Application project, app/window entry points, and manifests. |
+| `src/Neodash.ModLoader/Core/` | Operations grouped by feature: mods, profiles, settings, UE4SS, configuration, and supporting I/O. |
+| `src/Neodash.ModLoader/Services/` | Contracts, DI composition, backend adapters, and feature workflows. |
+| `src/Neodash.ModLoader/UI/` | Desktop dialogs, file pickers, navigation, window services, controls, and view models. |
+| `src/Neodash.ModLoader/Views/` | XAML pages and their rendering, focus, and interaction events. |
+| `src/Neodash.ModLoader/Models/` | Individually named settings, profile, catalog, and installation data types. |
+| `src/Neodash.ModLoader/Assets/` | Branding assets and Windows package artwork, separated from code. |
 | `tests/Neodash.ModLoader.Integration/` | Regression scenarios, shared fixtures, and the isolated test host. |
 | `scripts/build.ps1` | Release (default) and Debug developer builds. |
 | `eng/` | Local and CI verification scripts. |
 | `.github/workflows/` | Windows build, test, coverage, and artifact workflow. |
+
+The project and source folders use the `Neodash.ModLoader` identifier. The installed product remains **Neodash Mod Loader**: its executable, installer identity, resource namespace, and existing application-data paths are preserved.
 
 ## Contributing
 

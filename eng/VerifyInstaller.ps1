@@ -9,8 +9,8 @@ $installer = Join-Path $repository 'installer.iss'
 $cleanup = Join-Path $PSScriptRoot 'LegacyRuntimeCleanup.iss'
 $directories = Join-Path $PSScriptRoot 'LegacyRuntimeDirectories.iss'
 $legacyPublishRoots = @(
-    (Join-Path $repository 'Neodash Mod Loader/bin/x64/Debug/net8.0-windows10.0.19041.0/win-x64'),
-    (Join-Path $repository 'Neodash Mod Loader/bin/x64/Release/net10.0-windows10.0.19041.0/win-x64')
+    (Join-Path $repository 'artifacts/legacy-builds/Neodash.ModLoader/bin/x64/Debug/net8.0-windows10.0.19041.0/win-x64'),
+    (Join-Path $repository 'artifacts/legacy-builds/Neodash.ModLoader/bin/x64/Release/net10.0-windows10.0.19041.0/win-x64')
 )
 $expectedCleanupEntryCount = 1086
 $expectedCleanupEntryHash = '7DE7203FDC81E80964797C607C70CAAABC7359A89D2634B3A288F89A5A60FE2D'

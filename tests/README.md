@@ -16,7 +16,15 @@ dotnet test --project tests/Neodash.ModLoader.Integration/Neodash.ModLoader.Inte
 
 The xUnit v3 tests run through the native Microsoft Testing Platform runner and each scenario is individually discoverable. They link the actual installer, mod operations, settings, profiles, catalog, version, path, and mod-management source files. Test substitutes keep storage and process checks deterministic. Filesystem scenarios execute their core fixture in a filtered fresh test host, so static settings/profile state cannot leak between random test order or individual filtered runs. Filesystem fixtures stay under `tests/.scratch/`, which the runner validates before deleting; it never installs into your real game or uses your real settings.
 
-`IntegrationTests.cs` lists the discoverable facts. Scenario implementations are split into `IntegrationTests.*.cs` files by feature, `IntegrationTestHost.cs` handles process isolation, and `TestFixtures.cs` contains shared filesystem and assertion helpers.
+`IntegrationTests.cs` lists the discoverable facts. `Scenarios/IntegrationTests.*.cs` contains implementations by feature, `Host/IntegrationTestHost.cs` handles process isolation, and `Host/TestFixtures.cs` contains shared filesystem and assertion helpers. Focused tests are grouped under `Core/`, `Services/`, and `Presentation/`.
+
+## .NET 10 test project
+
+The SDK-style project targets `net10.0-windows` with C# 14, nullable annotations, `OutputType=Exe`, `IsTestProject=true`, and `IsPackable=false`. It uses xUnit v3's `xunit.v3.mtp-v2` package and the native Microsoft Testing Platform runner selected by `global.json`. This follows the [.NET 10 MTP guidance](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-dotnet-test#mtp-mode-of-dotnet-test) and [xUnit v3 project guidance](https://xunit.net/docs/getting-started/v3/getting-started). VSTest adapters and the .NET 8/9 bridge property are not needed for this repository's .NET 10 runner.
+
+Linked production sources are declared by feature in the project file. The existing `AppStorage`, `GameRuntime`, and `ResourceStrings` boundaries are substituted by the isolated host, so tests cannot accidentally write to real application data, inspect a live game, or fetch the production resource URLs. Resource lookup is outside linked-source coverage. These links intentionally test the production implementations without loading WinUI. This is an existing harness boundary, not a claim that .NET prescribes linked-source tests or one mandatory folder layout.
+
+Folder placement does not change test namespaces, test names, discovery, or child-process filters. The complete suite must discover the same cases before and after organization; `eng/Verify.ps1` runs them with coverage and validates the published app.
 
 `ApplicationServicesTests.cs` uses the production `ModEditSession`, `NavigationGuard`, `StartupCoordinator`, and core DI registrations with injected fakes. These tests verify successful and failed saves, retained drafts, discard without I/O, reload and subscription cleanup, Save / Discard / Cancel decisions, corrupt-settings startup, existing-runtime setup detection, and independent window scopes sharing one backend. They do not need filesystem fixtures or process isolation.
 

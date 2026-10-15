@@ -29,9 +29,9 @@ Push-Location $repository
 try {
     Write-Host 'Running installer cleanup validation...'
     & (Join-Path $PSScriptRoot 'VerifyInstaller.ps1')
-    Invoke-DotnetCheck 'restore' @('restore', 'Neodash Mod Loader.slnx', '-p:Platform=x64')
+    Invoke-DotnetCheck 'restore' @('restore', 'Neodash.ModLoader.slnx', '-p:Platform=x64')
     Invoke-DotnetCheck 'coverage-tool-restore' @('tool', 'restore')
-    Invoke-DotnetCheck 'build' @('build', 'Neodash Mod Loader.slnx', '--no-restore', '-c', $Configuration,
+    Invoke-DotnetCheck 'build' @('build', 'Neodash.ModLoader.slnx', '--no-restore', '-c', $Configuration,
         '-p:Platform=x64', '-p:TreatWarningsAsErrors=true', '-p:ContinuousIntegrationBuild=true', '-t:Rebuild')
     foreach ($oldReport in @($coverageReport, (Join-Path $coverageDirectory 'coverage.json'), (Join-Path $coverageDirectory 'summary.json'))) {
         if (Test-Path -LiteralPath $oldReport) { Remove-Item -LiteralPath $oldReport }
@@ -65,7 +65,7 @@ try {
     $summary | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $coverageDirectory 'summary.json')
     Write-Host ("Core line coverage: {0}% ({1}/{2})." -f $summary.linePercent, $linesCovered, $linesValid)
 
-    $propertyJson = & dotnet msbuild 'Neodash Mod Loader/Neodash Mod Loader.csproj' "-p:Configuration=$Configuration" '-p:Platform=x64' `
+    $propertyJson = & dotnet msbuild 'src/Neodash.ModLoader/Neodash.ModLoader.csproj' "-p:Configuration=$Configuration" '-p:Platform=x64' `
         '-getProperty:RuntimeIdentifier,SelfContained,WindowsAppSDKSelfContained,PublishSingleFile,Version,AssemblyVersion,FileVersion' '-v:quiet'
     if ($LASTEXITCODE -ne 0) { throw 'Could not evaluate publish settings.' }
     $properties = (($propertyJson -join [Environment]::NewLine) | ConvertFrom-Json).Properties
@@ -73,7 +73,7 @@ try {
         $properties.WindowsAppSDKSelfContained -ne 'true' -or $properties.PublishSingleFile -ne 'true') {
         throw 'Publishing must include the .NET and Windows App SDK runtimes in a self-contained win-x64 single file.'
     }
-    [xml] $packageManifest = Get-Content -LiteralPath (Join-Path $repository 'Neodash Mod Loader/Package.appxmanifest') -Raw
+    [xml] $packageManifest = Get-Content -LiteralPath (Join-Path $repository 'src/Neodash.ModLoader/Package.appxmanifest') -Raw
     $installerVersion = [regex]::Match((Get-Content -LiteralPath (Join-Path $repository 'installer.iss') -Raw), '(?m)^AppVersion=(.+)$').Groups[1].Value.Trim()
     if ($properties.Version -ne $properties.AssemblyVersion -or $properties.Version -ne $properties.FileVersion -or
         $properties.Version -ne $packageManifest.Package.Identity.Version -or $properties.Version -ne $installerVersion) {
@@ -92,7 +92,7 @@ try {
         }
         Remove-Item -LiteralPath $publish -Recurse -Force
     }
-    Invoke-DotnetCheck 'publish' @('publish', 'Neodash Mod Loader/Neodash Mod Loader.csproj', '--no-restore', '-c', $Configuration,
+    Invoke-DotnetCheck 'publish' @('publish', 'src/Neodash.ModLoader/Neodash.ModLoader.csproj', '--no-restore', '-c', $Configuration,
         '-p:Platform=x64', '-p:ContinuousIntegrationBuild=true', '-p:TreatWarningsAsErrors=true', '-o', $publish)
 
     $files = @(Get-ChildItem -LiteralPath $publish -File -Recurse -Force)

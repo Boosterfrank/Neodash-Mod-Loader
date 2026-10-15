@@ -1,3 +1,7 @@
 {
-    "dotnet.defaultSolution": "Neodash Mod Loader.slnx"
+    "dotnet.defaultSolution": "Neodash.ModLoader.slnx",
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true
+    }
 }

@@ -31,11 +31,11 @@ $binlog = Join-Path $logs ("build-$($configuration.ToLowerInvariant())-{}.binlog
 Push-Location $repository
 try {
     Write-Host "Building $configuration (Windows x64)…"
-    & dotnet build 'Neodash Mod Loader.slnx' -c $configuration -p:Platform=x64 -p:TreatWarningsAsErrors=true "-bl:$binlog"
+    & dotnet build 'Neodash.ModLoader.slnx' -c $configuration -p:Platform=x64 -p:TreatWarningsAsErrors=true "-bl:$binlog"
     if ($LASTEXITCODE -ne 0) { throw "The $configuration build failed (exit $LASTEXITCODE). See $logs." }
 
     if ($Debug) {
-        Write-Host ('Debug EXE: ' + (Join-Path $repository 'Neodash Mod Loader/bin/x64/Debug/net10.0-windows/win-x64/Neodash Mod Loader.exe'))
+        Write-Host ('Debug EXE: ' + (Join-Path $repository 'src/Neodash.ModLoader/bin/x64/Debug/net10.0-windows/win-x64/Neodash Mod Loader.exe'))
     }
     else {
         Write-Host ('Release EXE: ' + (Join-Path $repository 'artifacts/publish/Neodash Mod Loader.exe'))

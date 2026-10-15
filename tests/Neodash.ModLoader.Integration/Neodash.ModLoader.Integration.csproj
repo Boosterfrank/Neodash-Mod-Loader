@@ -5,57 +5,33 @@
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <AppSourceRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', 'src', 'Neodash.ModLoader'))</AppSourceRoot>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.2" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\ApplicationContracts.cs" Link="Production\Services\ApplicationContracts.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\ApplicationModels.cs" Link="Production\Services\ApplicationModels.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\PresentationContracts.cs" Link="Production\Services\PresentationContracts.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\AppUpdateCoordinator.cs" Link="Production\Services\AppUpdateCoordinator.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\DispatchedProgress.cs" Link="Production\Services\DispatchedProgress.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\ItemOperationProgress.cs" Link="Production\Services\ItemOperationProgress.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\OperationProgressPresentation.cs" Link="Production\Services\OperationProgressPresentation.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\UserNotifications.cs" Link="Production\Services\UserNotifications.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\DiagnosticActions.cs" Link="Production\Services\DiagnosticActions.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\EditableMod.cs" Link="Production\Services\EditableMod.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Ui\ObservableCollectionSync.cs" Link="Production\Ui\ObservableCollectionSync.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\UI\StartupFrameGate.cs" Link="Production\Ui\StartupFrameGate.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\ModEditSession.cs" Link="Production\Services\ModEditSession.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\NavigationGuard.cs" Link="Production\Services\NavigationGuard.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\ModOperationMessages.cs" Link="Production\Services\ModOperationMessages.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\StartupCoordinator.cs" Link="Production\Services\StartupCoordinator.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\CoreServiceRegistration.cs" Link="Production\Services\CoreServiceRegistration.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Services\Core\*.cs" Link="Production\Services\Core\%(Filename)%(Extension)" />
-    <Compile Include="..\..\Neodash Mod Loader\ModManager.cs" Link="Production\ModManager.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ModEntryPoints.cs" Link="Production\ModEntryPoints.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ModPackageInstaller.cs" Link="Production\ModPackageInstaller.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ModVersion.cs" Link="Production\ModVersion.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\AppJsonContext.cs" Link="Production\AppJsonContext.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\DownloadTransfer.cs" Link="Production\DownloadTransfer.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ModOperations.cs" Link="Production\ModOperations.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ModOperations.LuaCreation.cs" Link="Production\ModOperations.LuaCreation.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ModStateTransactions.cs" Link="Production\ModStateTransactions.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\SettingsManager.cs" Link="Production\SettingsManager.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\SettingsMigration.cs" Link="Production\SettingsMigration.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Ue4ssService.cs" Link="Production\Ue4ssService.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ProfileManager.cs" Link="Production\ProfileManager.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ProfileJsonFormat.cs" Link="Production\ProfileJsonFormat.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\GamePathResolver.cs" Link="Production\GamePathResolver.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\GameProcessMatcher.cs" Link="Production\GameProcessMatcher.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\SafePaths.cs" Link="Production\SafePaths.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ConfigFileDocument.cs" Link="Production\ConfigFileDocument.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ConfigFileTransactions.cs" Link="Production\ConfigFileTransactions.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\AtomicFile.cs" Link="Production\AtomicFile.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\ApplicationLogger.cs" Link="Production\ApplicationLogger.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\FileSystemRetry.cs" Link="Production\FileSystemRetry.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Models\AppSettings.cs" Link="Production\Models\AppSettings.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Models\InstalledModRecord.cs" Link="Production\Models\InstalledModRecord.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Models\ModInstallResult.cs" Link="Production\Models\ModInstallResult.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Models\ModLibraryData.cs" Link="Production\Models\ModLibraryData.cs" />
-    <Compile Include="..\..\Neodash Mod Loader\Models\ModProfile.cs" Link="Production\Models\ModProfile.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Link UI-free production sources; Host/Doubles substitutes AppStorage, GameRuntime, and ResourceStrings. -->
+    <Compile Include="$(AppSourceRoot)Core\**\*.cs" Link="Production\Core\%(RecursiveDir)%(Filename)%(Extension)" Exclude="$(AppSourceRoot)Core\Storage\AppStorage.cs;$(AppSourceRoot)Core\Game\GameRuntime.cs" />
+    <Compile Include="$(AppSourceRoot)Models\*.cs" Link="Production\Models\%(Filename)%(Extension)" />
+    <Compile Include="$(AppSourceRoot)Services\Contracts\*.cs" Link="Production\Services\Contracts\%(Filename)%(Extension)" />
+    <Compile Include="$(AppSourceRoot)Services\Models\*.cs" Link="Production\Services\Models\%(Filename)%(Extension)" />
+    <Compile Include="$(AppSourceRoot)Services\Adapters\*.cs" Link="Production\Services\Adapters\%(Filename)%(Extension)" />
+    <Compile Include="$(AppSourceRoot)Services\Feedback\*.cs" Link="Production\Services\Feedback\%(Filename)%(Extension)" />
+    <Compile Include="$(AppSourceRoot)Services\Mods\*.cs" Link="Production\Services\Mods\%(Filename)%(Extension)" />
+    <Compile Include="$(AppSourceRoot)Services\Navigation\NavigationGuard.cs" Link="Production\Services\Navigation\NavigationGuard.cs" />
+    <Compile Include="$(AppSourceRoot)Services\Setup\StartupCoordinator.cs" Link="Production\Services\Setup\StartupCoordinator.cs" />
+    <Compile Include="$(AppSourceRoot)Services\Updates\AppUpdateCoordinator.cs" Link="Production\Services\Updates\AppUpdateCoordinator.cs" />
+    <Compile Include="$(AppSourceRoot)Services\Composition\CoreServiceRegistration.cs" Link="Production\Services\Composition\CoreServiceRegistration.cs" />
+    <Compile Include="$(AppSourceRoot)Services\Settings\DiagnosticActions.cs" Link="Production\Services\Settings\DiagnosticActions.cs" />
+    <Compile Include="$(AppSourceRoot)UI\Collections\ObservableCollectionSync.cs" Link="Production\UI\Collections\ObservableCollectionSync.cs" />
+    <Compile Include="$(AppSourceRoot)UI\Startup\StartupFrameGate.cs" Link="Production\UI\Startup\StartupFrameGate.cs" />
+    <Compile Include="$(AppSourceRoot)UI\Startup\StartupFrameSnapshot.cs" Link="Production\UI\Startup\StartupFrameSnapshot.cs" />
   </ItemGroup>
 </Project>
