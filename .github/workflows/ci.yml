@@ -135,7 +135,7 @@ jobs:
           config: .github/zizmor.yml
 
   dependency-review:
-    name: Dependency review
+    name: Optional GitHub dependency review
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -145,11 +145,18 @@ jobs:
           persist-credentials: false
 
       - name: Review dependency changes
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW_ENABLED == 'true'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
           comment-summary-in-pr: never
+
+      - name: Explain unavailable optional review
+        if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW_ENABLED != 'true'
+        run: |
+          $notice = 'Optional GitHub dependency review is disabled. A repository admin must enable Dependency graph and set DEPENDENCY_REVIEW_ENABLED=true to use it. Required high/critical audits of direct and transitive packages still run during both Windows restores.'
+          Write-Warning $notice
+          $notice | Out-File -LiteralPath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       - name: No pull request comparison
         if: github.event_name != 'pull_request'

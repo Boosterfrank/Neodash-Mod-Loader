@@ -12,10 +12,12 @@ The workflow structure follows [CheatEngine.SDK](https://github.com/CheatEngineN
 | `pull-request-ci.yml` | Verify pull requests and merge queue candidates; cancel superseded runs for the same request or queue ref. |
 | `ci.yml` → Build and test | Independently restore, rebuild, and test Debug and Release on `windows-2025`. Release also publishes and tests the installer. |
 | Workflow and script checks | Parse all `eng/` and `scripts/` PowerShell files, run actionlint, and run offline zizmor security checks. |
-| Dependency review | Reject newly introduced high or critical dependency vulnerabilities on pull requests. Other events have no PR comparison. |
+| Optional GitHub dependency review | When configured, review dependency changes on pull requests. Required high/critical package auditing runs in both Windows restores regardless of this optional integration. |
 | `CI / Gate` | Require all three upstream jobs, including both matrix configurations, to succeed. Failed, cancelled, and skipped required jobs cannot pass. |
 
 Use **CI / Gate** as the required branch-protection check if protection is configured. Workflow edits do not change repository protection settings. Fork pull requests use a read-only token, no inherited secrets, and no persisted checkout credentials. Actions are pinned to full commit hashes. CI does not use dependency or build caches.
+
+GitHub's dependency review requires the repository's Dependency graph feature. A repository admin can enable it under **Settings → Advanced Security → Dependency graph**, then set the Actions repository variable **DEPENDENCY_REVIEW_ENABLED=true**. Without that variable, the optional job reports that the integration is disabled; it does not pretend to run a review. Once enabled, review errors and high/critical findings fail CI. The repository currently has this feature disabled, and push access alone cannot enable it. See [GitHub's setup instructions](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/enable-dependency-graph).
 
 The zizmor configuration disables only `self-repository`: the pinned actionlint release does not support the newer `$/` reference syntax suggested by that audit. All other offline zizmor audits run normally.
 
@@ -23,7 +25,7 @@ The zizmor configuration disables only `self-repository`: the pinned actionlint 
 
 `global.json` selects the exact .NET SDK and native Microsoft Testing Platform runner. `Directory.Build.props` shares C# 14, nullable reference checking, implicit usings, and dependency lockfile policy across the app and tests. Both projects are non-packable.
 
-Committed `packages.lock.json` files describe consumed dependencies. `eng/Verify.ps1` restores with `--locked-mode`, so changing a dependency without updating its lockfile fails before compilation. CI builds treat warnings as errors. xUnit's built-in TRX reporter records every test, skipped tests fail, and verification rejects empty or incomplete runs.
+Committed `packages.lock.json` files describe consumed dependencies. `eng/Verify.ps1` restores with `--locked-mode`, so changing a dependency without updating its lockfile fails before compilation. NuGet audits both direct and transitive packages during restore. High/critical vulnerabilities and audit-source errors fail validation independently of GitHub's optional dependency-review service. The policy is shared in `Directory.Build.props`; see [Microsoft's audit documentation](https://learn.microsoft.com/nuget/concepts/auditing-packages). CI builds treat warnings as errors. xUnit's built-in TRX reporter records every test, skipped tests fail, and verification rejects empty or incomplete runs.
 
 Coverlet measures linked production sources in the isolated test harness. Reports exclude tests, substitutes, generated sources, WinUI, and production sources outside that harness. A valid nonempty report is required; no coverage percentage threshold is currently enforced. This is not whole-app coverage.
 

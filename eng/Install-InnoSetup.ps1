@@ -135,3 +135,6 @@ if (($compilerHelp | Out-String) -notmatch 'Inno Setup 6 Command-Line Compiler')
 
 Remove-Item -LiteralPath $installerPath -Force
 Write-Output $compilerPath
+# ISCC /? returns 1 even when it prints valid help. Report this script's own
+# successful result so GitHub's PowerShell wrapper does not inherit that code.
+exit 0
