@@ -107,9 +107,12 @@ Application data is stored in:
 | `settings.json` | App preferences, selected game path, and managed installation records. |
 | `profiles.json` | Named profiles and the active profile. |
 | `Backups/` | Mod snapshots used for update restoration and operation recovery. |
-| `operations.log` | Installation, settings, and recovery diagnostics. |
+| `operations-*.log` | Installation, settings, and recovery diagnostics, rotated daily and at 10 MiB. |
+| `crash.txt`, `crash_*.txt` | Unhandled exceptions, including inner exceptions and stack traces. |
 
 Open these locations from **Settings → Diagnostics and recovery**. Mods themselves remain in the selected game's `Win64/Mods` and `Win64/DisabledMods` folders.
+
+Logging uses Serilog with local-PC timestamps such as `[2026-10-15 04:27:01] [INF]`. Each log stream retains up to 14 files. Diagnostic buttons open the newest rolled file; the old `operations.log` remains available as a fallback. Settings → About shows the build's embedded Git commit, which can be selected and copied into a bug report. Source builds without Git metadata show that the commit is unavailable.
 
 Older settings and profiles are supported, including legacy installed-version keys and unknown settings fields. Settings resaved by version 1.3 after using a newer version are decoded on load; the next normal save writes installation lists and version mappings in the current format. If an existing settings or profile file cannot be read or validated, the app preserves it and blocks writes that would overwrite it. Back up the file before repairing it, and check the operation log for the reported error.
 

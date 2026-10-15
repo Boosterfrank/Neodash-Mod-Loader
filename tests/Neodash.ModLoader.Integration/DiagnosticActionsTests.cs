@@ -9,6 +9,16 @@ public sealed class DiagnosticActionsTests
     private static readonly string[] LogNames = ["crash", "operations", "ue4ss"];
 
     [Fact]
+    public void BuildCommitIsExposedThroughDiagnostics()
+    {
+        const string hash = "0123456789abcdef0123456789abcdef01234567";
+        var actions = new DiagnosticActions(new FakeDiagnostics { CommitHash = hash }, new FakeFiles(), new FakeDialogs());
+
+        Assert.Equal(hash, actions.CommitHash);
+        Assert.Equal(new Version(1, 4), actions.Version);
+    }
+
+    [Fact]
     public async Task MissingLogsAreUnavailable()
     {
         foreach (string name in LogNames)
@@ -104,6 +114,7 @@ public sealed class DiagnosticActionsTests
         public int LocationRequests { get; private set; }
         public List<Exception?> LoggedErrors { get; } = [];
         public Version Version => new(1, 4);
+        public string? CommitHash { get; init; }
         public bool CanOpenLocation(string name) => Available;
         public string GetLocation(string name)
         {

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Neodash_Mod_Loader.Services;
 
 namespace Neodash_Mod_Loader.Services.Core;
@@ -6,14 +7,28 @@ namespace Neodash_Mod_Loader.Services.Core;
 public sealed class AppDiagnostics : IAppDiagnostics
 {
     public Version Version => typeof(AppDiagnostics).Assembly.GetName().Version ?? new Version(0, 0);
+    public string? CommitHash { get; } = GetCommitHash(typeof(AppDiagnostics).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+
+    internal static string? GetCommitHash(string? informationalVersion)
+    {
+        if (informationalVersion is null) return null;
+        int separator = informationalVersion.IndexOf('+');
+        if (separator < 0) return null;
+        var metadata = informationalVersion.AsSpan(separator + 1);
+        var hash = metadata[(metadata.LastIndexOf('.') + 1)..];
+        if (hash.Length is not (40 or 64)) return null;
+        foreach (char character in hash)
+            if (!Uri.IsHexDigit(character)) return null;
+        return hash.ToString().ToLowerInvariant();
+    }
 
     public void Log(string message, Exception? exception = null) => AppStorage.Log(message, exception);
     public void LogCrash(Exception exception)
     {
         try
         {
-            Directory.CreateDirectory(AppStorage.DirectoryPath);
-            File.AppendAllText(Path.Combine(AppStorage.DirectoryPath, "crash.txt"), $"[{DateTime.Now}] {exception.Message}\n{exception.StackTrace}\n\n");
+            AppStorage.LogCrash(exception);
         }
         catch
         {
@@ -24,7 +39,7 @@ public sealed class AppDiagnostics : IAppDiagnostics
     public string GetLocation(string name) => name switch
     {
         "ue4ss" => Ue4SsService.GetLogPath(GamePathResolver.RequireGamePath()),
-        "crash" => Path.Combine(AppStorage.DirectoryPath, "crash.txt"),
+        "crash" => AppStorage.CrashLogPath,
         "config" => Path.Combine(GamePathResolver.RequireGamePath(), "UE4SS-settings.ini"),
         "settings" => AppStorage.DirectoryPath,
         "backups" => CreateBackupsDirectory(),
@@ -43,7 +58,7 @@ public sealed class AppDiagnostics : IAppDiagnostics
         return name switch
         {
             "operations" => File.Exists(AppStorage.LogPath),
-            "crash" => File.Exists(Path.Combine(AppStorage.DirectoryPath, "crash.txt")),
+            "crash" => File.Exists(AppStorage.CrashLogPath),
             "settings" => Directory.Exists(AppStorage.DirectoryPath),
             "backups" => Directory.Exists(AppStorage.BackupsPath),
             _ => false

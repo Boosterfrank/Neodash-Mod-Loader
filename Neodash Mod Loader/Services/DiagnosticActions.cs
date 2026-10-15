@@ -3,6 +3,7 @@ namespace Neodash_Mod_Loader.Services;
 public sealed class DiagnosticActions(IAppDiagnostics diagnostics, IDesktopFiles files, IUserDialogs dialogs)
 {
     public Version Version => diagnostics.Version;
+    public string? CommitHash => diagnostics.CommitHash;
 
     public async Task OpenAsync(string name)
     {

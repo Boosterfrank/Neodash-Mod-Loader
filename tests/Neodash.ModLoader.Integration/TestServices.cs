@@ -9,6 +9,7 @@ public static class AppStorage
     public static string BackupsPath => Path.Combine(DirectoryPath, "Backups");
     public static string DownloadsPath => Path.Combine(DirectoryPath, "Downloads");
     public static string LogPath => Path.Combine(DirectoryPath, "operations.log");
+    public static string CrashLogPath => Path.Combine(DirectoryPath, "crash.txt");
     public static int SettingsWriteCount { get; private set; }
     public static int? FailSettingsWriteNumber { get; set; }
     public static string? FailWritePath { get; set; }
@@ -34,6 +35,11 @@ public static class AppStorage
     public static void Log(string message, Exception? exception = null)
     {
         // Logging is intentionally ignored so these tests exercise only their explicit filesystem fixtures.
+    }
+
+    public static void LogCrash(Exception exception)
+    {
+        // Crash logging is intentionally ignored; file-sink tests create their own isolated logger instances.
     }
 }
 

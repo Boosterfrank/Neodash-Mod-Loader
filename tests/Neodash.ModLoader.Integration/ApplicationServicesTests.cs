@@ -323,6 +323,7 @@ public sealed class ApplicationServicesTests
     {
         public int LogCount;
         public Version Version => new(1, 0);
+        public string? CommitHash => null;
 
         public void Log(string message, Exception? exception = null) => LogCount++;
         public void LogCrash(Exception exception) => throw new NotSupportedException();

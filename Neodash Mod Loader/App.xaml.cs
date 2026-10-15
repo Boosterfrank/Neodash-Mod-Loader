@@ -28,6 +28,7 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        _diagnostics.Log($"Starting Neodash Mod Loader {_diagnostics.Version} (commit {_diagnostics.CommitHash ?? "unavailable"}).");
         _windowScope = _services.CreateScope();
         _mainWindow = _windowScope.ServiceProvider.GetRequiredService<MainWindow>();
         _mainWindow.Closed += MainWindow_Closed;

@@ -61,6 +61,7 @@ public sealed partial class SettingsPage : Page
         SettingsRecoveryBar.IsOpen = state.LoadError is not null;
         SettingsControls.IsEnabled = state.LoadError is null;
         AppVersionText.Text = "Version " + state.Version;
+        GitCommitText.Text = state.CommitHash is { } hash ? "Git commit " + hash : "Git commit unavailable";
     }
 
     private async void RetrySettingsButton_Click(object sender, RoutedEventArgs e)

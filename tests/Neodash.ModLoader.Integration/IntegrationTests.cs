@@ -11,6 +11,10 @@ public sealed class IntegrationProcessCollection { }
 [Collection("Integration process tests")]
 public sealed partial class IntegrationTests
 {
+    [Fact] public Task SerilogWritesReadableLocalLogsAndCrashDetails() => AssertIsolatedAsync(nameof(SerilogWritesReadableLocalLogsAndCrashDetails), scratch => { SerilogFileLogging(scratch); return Task.CompletedTask; });
+    [Fact] public Task SerilogRotationPreservesLegacyLogsAndOpensNewestFile() => AssertIsolatedAsync(nameof(SerilogRotationPreservesLegacyLogsAndOpensNewestFile), scratch => { SerilogRotationAndLegacyLogs(scratch); return Task.CompletedTask; });
+    [Fact] public Task SerilogSupportsSharedFileWriters() => AssertIsolatedAsync(nameof(SerilogSupportsSharedFileWriters), scratch => { SerilogSharedWriters(scratch); return Task.CompletedTask; });
+    [Fact] public Task SerilogRetriesTransientInitializationFailures() => AssertIsolatedAsync(nameof(SerilogRetriesTransientInitializationFailures), scratch => { SerilogInitializationRecovery(scratch); return Task.CompletedTask; });
 
     [Fact] public Task NativeAndLuaModEntryPointsAreDisplayed() => AssertIsolatedAsync(nameof(NativeAndLuaModEntryPointsAreDisplayed), NativeAndLuaModEntryPointsAreDisplayedCore);
     [Fact] public Task NativeModUpdateRemovesObsoleteDllsAndRestoresBackup() => AssertIsolatedAsync(nameof(NativeModUpdateRemovesObsoleteDllsAndRestoresBackup), NativeModUpdateRemovesObsoleteDllsAndRestoresBackupCore);

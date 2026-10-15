@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.2" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ApplicationContracts.cs" Link="Production\Services\ApplicationContracts.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ApplicationModels.cs" Link="Production\Services\ApplicationModels.cs" />
@@ -41,6 +43,7 @@
     <Compile Include="..\..\Neodash Mod Loader\ConfigFileDocument.cs" Link="Production\ConfigFileDocument.cs" />
     <Compile Include="..\..\Neodash Mod Loader\ConfigFileTransactions.cs" Link="Production\ConfigFileTransactions.cs" />
     <Compile Include="..\..\Neodash Mod Loader\AtomicFile.cs" Link="Production\AtomicFile.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\ApplicationLogger.cs" Link="Production\ApplicationLogger.cs" />
     <Compile Include="..\..\Neodash Mod Loader\FileSystemRetry.cs" Link="Production\FileSystemRetry.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Models\AppSettings.cs" Link="Production\Models\AppSettings.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Models\InstalledModRecord.cs" Link="Production\Models\InstalledModRecord.cs" />
