@@ -23,6 +23,7 @@
     <Compile Include="..\..\Neodash Mod Loader\Services\DiagnosticActions.cs" Link="Production\Services\DiagnosticActions.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\EditableMod.cs" Link="Production\Services\EditableMod.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Ui\ObservableCollectionSync.cs" Link="Production\Ui\ObservableCollectionSync.cs" />
+    <Compile Include="..\..\Neodash Mod Loader\UI\StartupFrameGate.cs" Link="Production\Ui\StartupFrameGate.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ModEditSession.cs" Link="Production\Services\ModEditSession.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\NavigationGuard.cs" Link="Production\Services\NavigationGuard.cs" />
     <Compile Include="..\..\Neodash Mod Loader\Services\ModOperationMessages.cs" Link="Production\Services\ModOperationMessages.cs" />

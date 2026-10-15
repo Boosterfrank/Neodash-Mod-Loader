@@ -1,6 +1,7 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Neodash_Mod_Loader.Services;
+using Neodash_Mod_Loader.Ui;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI.ViewManagement;
 
@@ -20,13 +21,15 @@ namespace Neodash_Mod_Loader
         private readonly INavigationGuard _navigationGuard;
         private readonly StartupCoordinator _startup;
         private readonly AppUpdateCoordinator _updates;
-        public MainWindow(ISettingsService settings, IWindowContext window, IAppNavigator navigator, INavigationGuard navigationGuard, StartupCoordinator startup, AppUpdateCoordinator updates, IAppDiagnostics diagnostics, IUserNotifications notifications)
+        public MainWindow(ISettingsService settings, IWindowContext window, IAppNavigator navigator, INavigationGuard navigationGuard, StartupCoordinator startup, AppUpdateCoordinator updates, IAppDiagnostics diagnostics, IUserNotifications notifications, StartupWindowReveal startupReveal)
         {
             _navigator = navigator;
             _navigationGuard = navigationGuard;
             _startup = startup;
             _updates = updates;
+            startupReveal.Prepare(this);
             InitializeComponent();
+            startupReveal.WaitForContent(RootGrid, () => navigator.IsContentReady, () => _ = CheckForUpdatesAsync());
             window.Attach(this, RootGrid);
             notifications.Published += ShowNotification;
             Closed += (_, _) => notifications.Published -= ShowNotification;
@@ -155,6 +158,7 @@ namespace Neodash_Mod_Loader
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ApplyMinimumWindowSize();
+            CenterWindowInWorkArea();
             RootGrid.XamlRoot.Changed += (s, args) =>
             {
                 ApplyMinimumWindowSize();
@@ -162,7 +166,19 @@ namespace Neodash_Mod_Loader
             };
             UpdateTitleBarLayout();
             _navigator.NavigateRoot(_startup.GetInitialPage());
-            _ = CheckForUpdatesAsync();
+        }
+
+        private void CenterWindowInWorkArea()
+        {
+            var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
+            var workArea = display.WorkArea;
+            int width = Math.Min(AppWindow.Size.Width, workArea.Width);
+            int height = Math.Min(AppWindow.Size.Height, workArea.Height);
+            // WorkArea coordinates are relative to this display, including its taskbar offset.
+            AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(
+                workArea.X + (workArea.Width - width) / 2,
+                workArea.Y + (workArea.Height - height) / 2,
+                width, height), display);
         }
 
         public Task CheckForUpdatesAsync(bool showUpToDate = false) => _updates.CheckAsync(showUpToDate);

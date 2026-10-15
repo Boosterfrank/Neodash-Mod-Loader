@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Animation;
 using Neodash_Mod_Loader.Views;
 
 namespace Neodash_Mod_Loader.Services;
@@ -8,6 +10,10 @@ public sealed partial class AppNavigator(IPageActivation activation) : IAppNavig
 {
     private Frame? _root;
     private Frame? _shell;
+    public bool IsContentReady => IsReady(_root) && (_root?.Content is not ShellPage || IsReady(_shell));
+
+    private static bool IsReady(Frame? frame) => frame is { IsLoaded: true,
+        Content: FrameworkElement { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 } };
     public void AttachRoot(Frame frame) => Attach(ref _root, frame);
     public void AttachShell(Frame frame) => Attach(ref _shell, frame);
     public void NavigateRoot(AppPage destination) => Navigate(_root, destination);
@@ -41,7 +47,10 @@ public sealed partial class AppNavigator(IPageActivation activation) : IAppNavig
             AppPage.Onboarding => typeof(OnboardingPage),
             AppPage.Shell => typeof(ShellPage),
             _ => throw new ArgumentOutOfRangeException(nameof(destination))};
-        if (!frame.Navigate(pageType))
+        // The first page must be painted fully before the native window is revealed.
+        // Later navigation keeps its normal transition.
+        NavigationTransitionInfo? transition = frame.Content is null ? new SuppressNavigationTransitionInfo() : null;
+        if (!frame.Navigate(pageType, null, transition))
             throw new InvalidOperationException($"Could not navigate to {destination}.");
     }
 

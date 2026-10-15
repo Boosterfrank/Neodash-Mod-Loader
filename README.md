@@ -163,19 +163,21 @@ To compile and test the Windows installer after publishing, install [Inno Setup 
 | Publish size and SHA-256 manifest | `artifacts/logs/publish-manifest.json` |
 | Coverage reports and summary | `artifacts/coverage/latest/` |
 
+Build a self-contained Release EXE (the default):
+
+```powershell
+./scripts/build.ps1
+```
+
 For a development build:
 
 ```powershell
-dotnet build 'Neodash Mod Loader.slnx' -c Debug -p:Platform=x64
-```
-
-For a self-contained Release build:
-
-```powershell
-dotnet build 'Neodash Mod Loader.slnx' -c Release -p:Platform=x64
+./scripts/build.ps1 --debug
 ```
 
 Release builds automatically publish `artifacts/publish/Neodash Mod Loader.exe`, including the .NET and Windows App SDK runtimes, assets, and native dependencies. Distribute that one file. The DLLs under `bin/` are intermediate build output. Set `-p:PublishReleaseAfterBuild=false` to skip the packaging step when only compiling.
+
+The build script requires PowerShell 7.2 or later, restores dependencies automatically, builds Windows x64, and saves a unique MSBuild binary log under `artifacts/logs/`. It works from any working directory. PowerShell's `-Debug` spelling is also accepted. To run the complete regression suite, coverage, and publish verification, use `./eng/Verify.ps1`.
 
 To run the tests alone:
 
@@ -205,6 +207,7 @@ WinUI `Frame` still creates pages and handles navigation transitions. `PageActiv
 | `Neodash Mod Loader/Models/` | Settings, profiles, catalog entries, and installation records. |
 | `Neodash Mod Loader/*.cs` | Mod operations, package installation, persistence, and recovery services. |
 | `tests/Neodash.ModLoader.Integration/` | Regression scenarios, shared fixtures, and the isolated test host. |
+| `scripts/build.ps1` | Release (default) and Debug developer builds. |
 | `eng/` | Local and CI verification scripts. |
 | `.github/workflows/` | Windows build, test, coverage, and artifact workflow. |
 

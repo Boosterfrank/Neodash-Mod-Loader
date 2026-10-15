@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Neodash_Mod_Loader.Ui;
 
 namespace Neodash_Mod_Loader.Services;
 
@@ -21,6 +22,7 @@ public static class DesktopServiceRegistration
         services.AddScoped<IPageActivation, PageActivation>();
         services.AddScoped<IAppNavigator, AppNavigator>();
         services.AddScoped<AppUpdateCoordinator>();
+        services.AddScoped<StartupWindowReveal>();
         services.AddScoped<GameFolderPicker>();
         services.AddScoped<PreferencesController>();
         services.AddScoped<RuntimeActions>();
