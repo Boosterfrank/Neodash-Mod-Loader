@@ -134,7 +134,7 @@ UE4SS status detection accepts version numbers and prerelease/build labels witho
 
 ## Development
 
-Build on Windows with Git, PowerShell 7.2 or newer, and the **.NET 10 SDK**. [global.json](global.json) selects a stable .NET 10 SDK and allows newer .NET 10 feature bands. The app targets `net10.0-windows`, uses C# 14, and publishes for `win-x64`.
+Build on Windows with Git, PowerShell 7.2 or newer, and **.NET SDK 10.0.401**, pinned in [global.json](global.json). Local builds and CI use the same SDK. The app targets `net10.0-windows`, uses C# 14 with nullable reference checking enabled in [Directory.Build.props](Directory.Build.props), and publishes for `win-x64`.
 
 ```powershell
 git clone https://github.com/Boosterfrank/Neodash-Mod-Loader.git
@@ -142,13 +142,14 @@ cd Neodash-Mod-Loader
 .\eng\Verify.ps1
 ```
 
-[Verify.ps1](eng/Verify.ps1) runs the same checks as CI: restore, rebuild with warnings treated as errors, run the regression suite, collect core-source coverage, and publish the app. It verifies that the output contains exactly one self-contained executable.
+[Verify.ps1](eng/Verify.ps1) runs the same application checks as CI: locked dependency restore, rebuild with warnings treated as errors, run the regression suite, collect core-source coverage, and publish the app. It rejects empty or skipped test runs and verifies that the output contains exactly one self-contained executable with the source Git commit embedded. See [CI and build maintenance](docs/ci.md) for workflow jobs, artifacts, and dependency updates. The app is not packaged or published to NuGet.
 
-To compile and test the Windows installer after publishing, install [Inno Setup 6.4 or newer](https://jrsoftware.org/isdl.php), then run:
+To compile and test the Windows installer after publishing, provision the pinned portable [Inno Setup](https://jrsoftware.org/isdl.php) compiler, then run:
 
 ```powershell
-.\eng\TestInstaller.ps1
-# If ISCC.exe is outside PATH and the standard install directories:
+$compiler = ./eng/Install-InnoSetup.ps1
+./eng/TestInstaller.ps1 -CompilerPath $compiler
+# Or use an existing Inno Setup 6.4+ installation:
 .\eng\TestInstaller.ps1 -CompilerPath 'C:\path\to\ISCC.exe'
 ```
 
@@ -160,6 +161,7 @@ To compile and test the Windows installer after publishing, install [Inno Setup 
 | Compiled installer | `artifacts/installer/ModLoaderSetup.exe` |
 | Installer test logs and results | `artifacts/installer-verification/run-*/` |
 | Build and test logs | `artifacts/logs/` |
+| Per-configuration test results | `artifacts/test-results/Debug/` and `artifacts/test-results/Release/` |
 | Publish size and SHA-256 manifest | `artifacts/logs/publish-manifest.json` |
 | Coverage reports and summary | `artifacts/coverage/latest/` |
 

@@ -1,8 +1,9 @@
 {
   "sdk": {
-    "version": "10.0.100",
-    "rollForward": "latestFeature",
-    "allowPrerelease": false
+    "version": "10.0.401",
+    "rollForward": "disable",
+    "allowPrerelease": false,
+    "errorMessage": "This repository builds with .NET SDK 10.0.401. Install that SDK; CI reads this same global.json."
   },
   "test": {
     "runner": "Microsoft.Testing.Platform"

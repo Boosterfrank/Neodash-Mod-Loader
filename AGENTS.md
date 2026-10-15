@@ -9,11 +9,11 @@ The Windows x64 app manages Neodash UE4SS mods using WinUI 3, .NET 10, and C# 14
 - `Services/`: contracts, workflow models, DI composition, backend adapters, and feature controllers. `UI/`: desktop dialogs, navigation, window services, controls, and view models. `Views/`: XAML pages and their rendering/event code.
 - `Models/`: one named data type per file. `Assets/Branding/`: app icon and logos. `Assets/Package/`: Windows package artwork. `Properties/`: resources and launch/publish profiles.
 - `tests/Neodash.ModLoader.Integration/`: `Scenarios/` contains filesystem regressions, `Host/` provides isolation/fixtures, and `Core/`, `Services/`, and `Presentation/` group focused tests.
-- `eng/Verify.ps1` and `.github/workflows/ci.yml`: local verification and Windows CI. Generated outputs belong in ignored `artifacts/`, `bin/`, and `obj/` directories.
+- `eng/Verify.ps1` and reusable `.github/workflows/ci.yml`: local verification and Windows CI, called by `main-ci.yml` and `pull-request-ci.yml`. See `docs/ci.md` for gates and dependency/tool maintenance. Generated outputs belong in ignored `artifacts/`, `bin/`, and `obj/` directories.
 
 ## Build, Test, and Development Commands
 
-Run from the repository root on Windows with PowerShell and the .NET 10 SDK selected by `global.json`.
+Run from the repository root on Windows with PowerShell 7.2+ and the exact .NET 10 SDK selected by `global.json`. Nullable reference checking and C# 14 are enabled centrally in `Directory.Build.props`. Commit dependency lockfiles; verification uses locked restore. The app is not published to NuGet.
 
 - `./eng/Verify.ps1`: restore, rebuild with warnings as errors, run regressions, collect core coverage, and validate a self-contained single-EXE publish.
 - `dotnet build 'Neodash.ModLoader.slnx' -c Debug -p:Platform=x64`: build the development solution.

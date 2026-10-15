@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # Update packages consumed by the app and tests; this does not publish packages.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      nuget-minor-and-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+    ignore:
+      # This implicit lockfile entry follows the pinned SDK, not a PackageReference.
+      - dependency-name: Microsoft.NET.ILLink.Tasks
+
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      actions-minor-and-patch:
+        patterns: ['*']
+        update-types: [minor, patch]

@@ -1,0 +1,5 @@
+rules:
+  # actionlint 1.7.12 does not support the newer $/ local-action syntax.
+  # Keep standard ./ references until both linters support the replacement.
+  self-repository:
+    disable: true

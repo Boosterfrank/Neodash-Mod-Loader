@@ -1,57 +1,86 @@
-name: Build and test
+name: CI
 
 on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  TESTINGPLATFORM_TELEMETRY_OPTOUT: '1'
 
 jobs:
-  windows:
-    name: Windows x64
-    runs-on: windows-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        shell: pwsh
+  build-test:
+    name: Build and test (${{ matrix.configuration }})
+    runs-on: windows-2025
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
     env:
-      DOTNET_NOLOGO: 'true'
-      DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
-      TESTINGPLATFORM_TELEMETRY_OPTOUT: '1'
+      CONFIGURATION: ${{ matrix.configuration }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - name: Set up pinned .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '10.0.x'
+          global-json-file: global.json
+          cache: false
 
-      - name: Build, test, and verify single EXE
-        run: ./eng/Verify.ps1
+      - name: Build, test, and verify distribution
+        run: |
+          $skipPublish = $env:CONFIGURATION -eq 'Debug'
+          ./eng/Verify.ps1 -Configuration $env:CONFIGURATION -SkipPublish:$skipPublish
 
       - name: Compile and test installer in isolated folders
-        run: ./eng/TestInstaller.ps1
+        if: matrix.configuration == 'Release'
+        run: |
+          $compiler = ./eng/Install-InnoSetup.ps1 -Destination (Join-Path $env:RUNNER_TEMP 'inno-setup')
+          ./eng/TestInstaller.ps1 -CompilerPath $compiler
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-${{ matrix.configuration }}
+          path: artifacts/test-results/${{ matrix.configuration }}/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload core coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: core-coverage-${{ matrix.configuration }}
+          path: artifacts/coverage/latest/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: validation-logs
+          name: validation-logs-${{ matrix.configuration }}
           path: |
             artifacts/logs/
             artifacts/installer-verification/run-*/logs/
             artifacts/installer-verification/run-*/results.json
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: Upload self-contained app
+        if: success() && matrix.configuration == 'Release'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Neodash-Mod-Loader-win-x64
@@ -59,19 +88,89 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload core coverage
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: core-coverage
-          path: artifacts/coverage/latest/
-          if-no-files-found: warn
-          retention-days: 7
-
       - name: Upload verified installer
+        if: success() && matrix.configuration == 'Release'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Neodash-Mod-Loader-Setup
           path: artifacts/installer/ModLoaderSetup.exe
           if-no-files-found: error
           retention-days: 14
+
+  lint:
+    name: Workflow and script checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      ACTIONLINT_VERSION: '1.7.12'
+      ACTIONLINT_SHA256: '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check PowerShell syntax
+        run: ./eng/VerifyScripts.ps1
+
+      - name: Check GitHub Actions syntax
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'actionlint.tar.gz'
+          $url = "https://github.com/rhysd/actionlint/releases/download/v$env:ACTIONLINT_VERSION/actionlint_$($env:ACTIONLINT_VERSION)_linux_amd64.tar.gz"
+          Invoke-WebRequest -Uri $url -OutFile $archive -MaximumRetryCount 3 -RetryIntervalSec 5
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $env:ACTIONLINT_SHA256) {
+            throw 'actionlint SHA-256 did not match the pinned release.'
+          }
+          tar -xzf $archive -C $env:RUNNER_TEMP actionlint
+          if ($LASTEXITCODE -ne 0) { throw 'Could not extract actionlint.' }
+          & (Join-Path $env:RUNNER_TEMP 'actionlint') -color
+          if ($LASTEXITCODE -ne 0) { throw 'actionlint failed.' }
+
+      - name: Check workflow security
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          version: '1.30.1'
+          online-audits: false
+          advanced-security: false
+          config: .github/zizmor.yml
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Review dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: never
+
+      - name: No pull request comparison
+        if: github.event_name != 'pull_request'
+        run: Write-Host 'Dependency review runs when a pull request supplies a base and head comparison.'
+
+  gate:
+    name: Gate
+    if: always()
+    needs: [build-test, lint, dependency-review]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          $results = $env:NEEDS | ConvertFrom-Json -AsHashtable
+          $failed = @($results.GetEnumerator() | Where-Object { $_.Value.result -ne 'success' })
+          if ($results.Count -ne 3 -or $failed.Count -gt 0) {
+            $details = ($failed | ForEach-Object { "$($_.Key)=$($_.Value.result)" }) -join ', '
+            throw "Required CI jobs did not all succeed: $details"
+          }
+          Write-Host 'All required CI jobs passed.'
