@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Neodash_Mod_Loader.Services;
 
-public interface IWindowContext
+public interface IWindowContext : IInstallerLauncher
 {
     WindowId WindowId { get; }
 
@@ -12,14 +12,15 @@ public interface IWindowContext
 
     void Attach(Window window, FrameworkElement root);
     void ApplyTheme(string? theme);
-    void OpenInstaller(string path);
     void Post(Action action);
 }
 
 public interface IDesktopDialogs : IUserDialogs
 {
-    Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog);
+    Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog, DesktopDialogSize size = DesktopDialogSize.Standard);
 }
+
+public enum DesktopDialogSize { Standard, Wide }
 
 public interface IConfigurationEditor
 {

@@ -17,11 +17,12 @@
     <Grid x:Name="RootGrid" Loaded="Window_Loaded" RequestedTheme="Dark">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- Dark Tint Overlay behind UI -->
-        <Border x:Name="BackdropTint" Grid.RowSpan="2" Background="#60000000" IsHitTestVisible="False" />
+        <Border x:Name="BackdropTint" Grid.RowSpan="3" Background="#60000000" IsHitTestVisible="False" />
 
         <!-- Custom Title Bar -->
         <Grid x:Name="AppTitleBar" Height="32" Background="Transparent" Grid.Row="0" SizeChanged="AppTitleBar_SizeChanged">
@@ -36,6 +37,8 @@
         </Grid>
 
         <!-- Main Content Area: Will hold either Onboarding OR NavigationView -->
-        <Frame x:Name="RootFrame" Grid.Row="1" Background="Transparent" />
+        <InfoBar x:Name="OperationNotice" Grid.Row="1" Margin="16,8,16,0" IsOpen="False" IsClosable="True"
+                 Severity="Informational" AutomationProperties.LiveSetting="Polite" />
+        <Frame x:Name="RootFrame" Grid.Row="2" Background="Transparent" />
     </Grid>
 </Window>

@@ -10,6 +10,8 @@ public static class DesktopServiceRegistration
         services.AddModLoaderCore();
         services.AddScoped<IWindowContext, WindowContext>();
         services.AddScoped<IUiDispatcher, WindowDispatcher>();
+        services.AddScoped<IInstallerLauncher>(provider => provider.GetRequiredService<IWindowContext>());
+        services.AddScoped<IUserNotifications, UserNotifications>();
         services.AddScoped<IDesktopDialogs, UiOperations>();
         services.AddScoped<IUserDialogs>(provider => provider.GetRequiredService<IDesktopDialogs>());
         services.AddScoped<IDesktopFiles, UiFiles>();

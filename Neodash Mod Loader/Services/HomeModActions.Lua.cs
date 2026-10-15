@@ -66,8 +66,10 @@ public sealed partial class HomeModActions
             dialog.Opened += (_, _) => name.Focus(FocusState.Programmatic);
             Validate();
             if (await dialogs.ShowDialogAsync(dialog) != ContentDialogResult.Primary || !await ResolveBeforeActionAsync()) return false;
-            if (!await RunAsync("Creating Lua mod", (p, t) => workspace.CreateLuaModAsync(name.Text, p, t))) return false;
-            if (openFolder.IsChecked == true) await OpenModFolderAsync(name.Text);
+            string modName = name.Text;
+            bool revealFolder = openFolder.IsChecked == true;
+            if (!await RunAsync("Creating Lua mod", (p, t) => workspace.CreateLuaModAsync(modName, p, t))) return false;
+            if (revealFolder) await OpenModFolderAsync(modName);
             return true;
         }
         catch (Exception ex)

@@ -20,7 +20,7 @@ namespace Neodash_Mod_Loader
         private readonly INavigationGuard _navigationGuard;
         private readonly StartupCoordinator _startup;
         private readonly AppUpdateCoordinator _updates;
-        public MainWindow(ISettingsService settings, IWindowContext window, IAppNavigator navigator, INavigationGuard navigationGuard, StartupCoordinator startup, AppUpdateCoordinator updates, IAppDiagnostics diagnostics)
+        public MainWindow(ISettingsService settings, IWindowContext window, IAppNavigator navigator, INavigationGuard navigationGuard, StartupCoordinator startup, AppUpdateCoordinator updates, IAppDiagnostics diagnostics, IUserNotifications notifications)
         {
             _navigator = navigator;
             _navigationGuard = navigationGuard;
@@ -28,6 +28,8 @@ namespace Neodash_Mod_Loader
             _updates = updates;
             InitializeComponent();
             window.Attach(this, RootGrid);
+            notifications.Published += ShowNotification;
+            Closed += (_, _) => notifications.Published -= ShowNotification;
             window.ApplyTheme(settings.Theme);
             navigator.AttachRoot(RootFrame);
             ExtendsContentIntoTitleBar = true;
@@ -47,6 +49,13 @@ namespace Neodash_Mod_Loader
                 if (args.DidPositionChange || args.DidSizeChange)
                     ApplyMinimumWindowSize();
             };
+        }
+
+        private void ShowNotification(object? sender, UserNotification notification)
+        {
+            OperationNotice.Title = notification.Title;
+            OperationNotice.Message = notification.Message;
+            OperationNotice.IsOpen = true;
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)

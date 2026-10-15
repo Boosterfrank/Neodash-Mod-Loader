@@ -7,7 +7,7 @@ using Neodash_Mod_Loader.Services;
 namespace Neodash_Mod_Loader;
 
 public sealed class UiConfigurationEditor(IConfigurationService configurations, IRuntimeService runtime,
-    IGameService game, IDesktopDialogs dialogs, IAppDiagnostics diagnostics) : IConfigurationEditor
+    IGameService game, IDesktopDialogs dialogs, IAppDiagnostics diagnostics, IUserNotifications notifications) : IConfigurationEditor
 {
     public Task EditModAsync(string name) => EditAsync(configurations.GetModConfiguration(name));
     public Task EditRuntimeAsync() => EditAsync(runtime.GetConfiguration());
@@ -17,23 +17,36 @@ public sealed class UiConfigurationEditor(IConfigurationService configurations, 
         var (gameRoot, folderRoot, files) = location;
         if (files.Count == 0) throw new FileNotFoundException("No configuration files were found.");
         game.EnsureClosed(gameRoot);
+        using var lifetime = new CancellationTokenSource();
+        CancellationToken token = lifetime.Token;
         var original = new Dictionary<string, ConfigFileDocument>(StringComparer.OrdinalIgnoreCase);
         var edited = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var picker = new ComboBox { ItemsSource = files.Select(path => Path.GetRelativePath(folderRoot, path)).ToList(), SelectedIndex = 0,
-            MaxWidth = 480, HorizontalAlignment = HorizontalAlignment.Stretch };
-        var editor = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 120, MaxHeight = 420,
-            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas") };
-        var status = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var picker = new ComboBox
+        {
+            Header = "Configuration file", ItemsSource = files.Select(path => Path.GetRelativePath(folderRoot, path)).ToList(),
+            SelectedIndex = 0, HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        var editor = new TextBox
+        {
+            AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 200, Height = 320,
+            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), IsEnabled = false
+        };
+        var status = new TextBlock { Text = "Loading configuration…", TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
         AutomationProperties.SetName(picker, "Configuration file");
         AutomationProperties.SetName(editor, "Configuration contents");
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
         ScrollViewer.SetHorizontalScrollBarVisibility(editor, ScrollBarVisibility.Auto);
         ScrollViewer.SetVerticalScrollBarVisibility(editor, ScrollBarVisibility.Auto);
         string? selected = null;
-        var content = new StackPanel { Spacing = 10 };
+        bool saving = false;
+        bool closed = false;
+        var content = new StackPanel { Spacing = 12 };
         content.Children.Add(picker); content.Children.Add(editor); content.Children.Add(status);
-        var dialog = new ContentDialog { Title = "Edit configuration", Content = content,
-            PrimaryButtonText = "Save changes", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Primary };
+        var dialog = new ContentDialog
+        {
+            Title = "Edit configuration", Content = content, IsPrimaryButtonEnabled = false,
+            PrimaryButtonText = "Save changes", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Primary
+        };
 
         async Task LoadSelectedAsync()
         {
@@ -41,36 +54,83 @@ public sealed class UiConfigurationEditor(IConfigurationService configurations, 
             picker.IsEnabled = false;
             editor.IsEnabled = false;
             dialog.IsPrimaryButtonEnabled = false;
+            status.Text = "Loading configuration…";
             try
             {
-                selected = SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, files[picker.SelectedIndex]));
-                if (!original.ContainsKey(selected))
+                string target = SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, files[picker.SelectedIndex]));
+                if (!original.ContainsKey(target))
                 {
-                    if (new FileInfo(selected).Length > 4_194_304) throw new IOException("This configuration is too large for the built-in editor. Open its folder to edit it externally.");
-                    original[selected] = ConfigFileDocument.Load(selected, await File.ReadAllBytesAsync(selected));
-                    edited[selected] = original[selected].Text;
+                    var document = await Task.Run(async () =>
+                    {
+                        if (new FileInfo(target).Length > 4_194_304)
+                            throw new IOException("This configuration is too large for the built-in editor. Open its folder to edit it externally.");
+                        return ConfigFileDocument.Load(target, await File.ReadAllBytesAsync(target, token));
+                    }, token);
+                    if (closed) return;
+                    original[target] = document;
+                    edited[target] = document.Text;
                 }
-                editor.Text = edited[selected];
+                selected = target;
+                editor.Text = edited[target];
                 editor.IsEnabled = true;
                 dialog.IsPrimaryButtonEnabled = true;
                 status.Text = "Edits are kept when switching files. Save applies all changed files.";
             }
-            catch (Exception ex) { editor.IsEnabled = false; dialog.IsPrimaryButtonEnabled = false; status.Text = ex.Message; diagnostics.Log("Could not open configuration.", ex); }
-            finally { picker.IsEnabled = true; }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { /* Dialog closed. */ }
+            catch (Exception ex)
+            {
+                if (!closed) status.Text = ex.Message;
+                diagnostics.Log("Could not open configuration.", ex);
+            }
+            finally { if (!closed) picker.IsEnabled = true; }
         }
-        await LoadSelectedAsync();
-        picker.SelectionChanged += async (_, _) => await LoadSelectedAsync();
-        if (await dialogs.ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
-        if (selected is not null) edited[selected] = editor.Text;
-        game.EnsureClosed(gameRoot);
-        var changes = edited
-            .Select(item => new ConfigFileChange(original[item.Key], item.Value))
-            .Where(change => !string.Equals(change.Text, change.Document.Text, StringComparison.Ordinal))
-            .ToList();
-        foreach (ConfigFileChange change in changes)
-            _ = SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, change.Document.Path));
 
-        ConfigFileTransactions.Apply(changes);
-        if (changes.Count > 0) diagnostics.Log("Saved configuration: " + string.Join(", ", changes.Select(change => Path.GetFileName(change.Document.Path))));
+        dialog.Opened += async (_, _) => await LoadSelectedAsync();
+        picker.SelectionChanged += async (_, _) => await LoadSelectedAsync();
+        dialog.Closing += (_, args) => { if (saving) args.Cancel = true; };
+        dialog.Closed += (_, _) => { closed = true; lifetime.Cancel(); };
+        dialog.PrimaryButtonClick += async (sender, args) =>
+        {
+            args.Cancel = true;
+            var deferral = args.GetDeferral();
+            saving = true;
+            picker.IsEnabled = false;
+            editor.IsEnabled = false;
+            dialog.IsPrimaryButtonEnabled = false;
+            dialog.CloseButtonText = string.Empty;
+            status.Text = "Saving configuration…";
+            try
+            {
+                if (selected is not null) edited[selected] = editor.Text;
+                var changes = edited.Select(item => new ConfigFileChange(original[item.Key], item.Value))
+                    .Where(change => !string.Equals(change.Text, change.Document.Text, StringComparison.Ordinal)).ToList();
+                await Task.Run(() =>
+                {
+                    game.EnsureClosed(gameRoot);
+                    foreach (var change in changes)
+                        _ = SafePaths.Child(gameRoot, Path.GetRelativePath(gameRoot, change.Document.Path));
+                    ConfigFileTransactions.Apply(changes);
+                });
+                if (changes.Count > 0)
+                    diagnostics.Log("Saved configuration: " + string.Join(", ", changes.Select(change => Path.GetFileName(change.Document.Path))));
+                notifications.Show("Configuration saved", changes.Count == 0 ? "No changes were needed." : $"Saved {changes.Count} configuration file(s).");
+                args.Cancel = false;
+            }
+            catch (Exception ex)
+            {
+                diagnostics.Log("Could not save configuration.", ex);
+                status.Text = "Could not save. Your edits are still here.\n" + ex.Message;
+            }
+            finally
+            {
+                saving = false;
+                picker.IsEnabled = true;
+                editor.IsEnabled = true;
+                dialog.IsPrimaryButtonEnabled = true;
+                dialog.CloseButtonText = "Cancel";
+                deferral.Complete();
+            }
+        };
+        await dialogs.ShowDialogAsync(dialog, DesktopDialogSize.Wide);
     }
 }

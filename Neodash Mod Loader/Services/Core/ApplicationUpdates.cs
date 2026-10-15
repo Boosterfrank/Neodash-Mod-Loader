@@ -6,13 +6,13 @@ namespace Neodash_Mod_Loader.Services.Core;
 /// <summary>Network-only update workflow; confirmation, launch, and exit remain presentation decisions.</summary>
 public sealed class ApplicationUpdates(IAppDiagnostics diagnostics) : IApplicationUpdates
 {
-    public async Task<Version?> FindUpdateAsync()
+    public async Task<Version?> FindUpdateAsync(CancellationToken token = default)
     {
         using var client = new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(20)
         };
-        string text = await client.GetStringAsync(Properties.ResourceStrings.GetRequired("ModLoaderVersionUrl"));
+        string text = await client.GetStringAsync(Properties.ResourceStrings.GetRequired("ModLoaderVersionUrl"), token);
         if (!Version.TryParse(text.Trim(), out Version? onlineVersion))
             throw new IOException("The update server returned an invalid version.");
         return onlineVersion > diagnostics.Version ? onlineVersion : null;

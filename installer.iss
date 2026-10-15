@@ -122,6 +122,34 @@ begin
   end;
 end;
 
+procedure RemoveEmptyLegacyRuntimeDirectories();
+var
+  AppDirectory: String;
+  CleanupError: String;
+  DirectoryIndex: Integer;
+  LegacyDirectory: String;
+  LegacyRuntimeDirectories: TArrayOfString;
+begin
+  AppDirectory := ExpandConstant('{app}');
+  LegacyRuntimeDirectories := GetLegacyRuntimeDirectories();
+
+  { The generated manifest is parent-first, so process it in reverse. This
+    removes a child before its parent and never removes a non-empty folder. }
+  for DirectoryIndex := LegacyRuntimeDirectoryCount - 1 downto 0 do
+  begin
+    LegacyDirectory := AddBackslash(AppDirectory) + LegacyRuntimeDirectories[DirectoryIndex];
+
+    { Revalidate each path immediately before RemoveDir to avoid following a
+      directory link created after the post-install validation. }
+    CleanupError := ValidateLegacyCleanupPath(LegacyDirectory);
+    if CleanupError <> '' then
+      RaiseException(CleanupError);
+
+    if DirExists(LegacyDirectory) and not RemoveDir(LegacyDirectory) then
+      Log('Preserved non-empty legacy runtime directory: ' + LegacyDirectory);
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   CleanupError: String;
@@ -134,5 +162,6 @@ begin
       RaiseException(CleanupError);
 
     RemoveLegacyRuntimeFiles();
+    RemoveEmptyLegacyRuntimeDirectories();
   end;
 end;

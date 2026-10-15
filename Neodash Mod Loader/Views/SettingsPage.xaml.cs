@@ -170,8 +170,15 @@ public sealed partial class SettingsPage : Page
 
     private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
-        await Controller.CheckUpdatesAsync();
-        if (IsLoaded) RefreshStatus();
+        CheckUpdatesButton.IsEnabled = false;
+        CheckUpdatesButton.Content = "Checking for updates…";
+        try { await Controller.CheckUpdatesAsync(); }
+        finally
+        {
+            CheckUpdatesButton.IsEnabled = true;
+            CheckUpdatesButton.Content = "Check for updates";
+            if (IsLoaded) RefreshStatus();
+        }
     }
 
     private async void ResetAppButton_Click(object sender, RoutedEventArgs e)

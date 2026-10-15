@@ -42,10 +42,14 @@ public sealed class ModLibraryController(IModCatalog catalog, IModWorkspace work
             return;
         await dialogs.RunAsync("Update mods", async (progress, token) =>
         {
-            foreach (var mod in updates)
+            for (int index = 0; index < updates.Count; index++)
             {
                 token.ThrowIfCancellationRequested();
-                await catalog.InstallAsync(mod, progress, token);
+                var mod = updates[index];
+                var itemProgress = new ItemOperationProgress(progress, mod.Name, index, updates.Count);
+                itemProgress.Report(new("Starting…"));
+                await catalog.InstallAsync(mod, itemProgress, token);
+                itemProgress.Report(new("Installed", 100));
             }
         });
     }
@@ -72,8 +76,10 @@ public sealed class ModLibraryController(IModCatalog catalog, IModWorkspace work
                     Title = "Open " + mod.Name + " folder",
                     Content = picker,
                     PrimaryButtonText = "Open folder",
-                    CloseButtonText = "Cancel"
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Primary
                 };
+                dialog.Opened += (_, _) => picker.Focus(FocusState.Programmatic);
                 if (await dialogs.ShowDialogAsync(dialog) != ContentDialogResult.Primary)
                     return;
                 selected = folders[picker.SelectedIndex];

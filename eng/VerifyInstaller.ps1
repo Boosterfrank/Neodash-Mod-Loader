@@ -84,6 +84,11 @@ if ([int]$Matches[1] -ne $directoryEntries.Count) {
 if (@(Compare-Object -ReferenceObject $expectedDirectories -DifferenceObject $directoryEntries).Count -ne 0) {
     throw 'The linked-directory checks do not match the cleanup manifest child directories.'
 }
+for ($directoryIndex = 0; $directoryIndex -lt $directoryEntries.Count; $directoryIndex++) {
+    if ($directoryEntries[$directoryIndex] -ne $expectedDirectories[$directoryIndex]) {
+        throw 'The linked-directory manifest must remain parent-first so empty directories can be removed child-first.'
+    }
+}
 
 $protectedNames = @('settings.json', 'profiles.json', 'operations.log', 'user-data.json')
 foreach ($protectedName in $protectedNames) {
@@ -105,9 +110,15 @@ foreach ($requiredText in @(
     'procedure CurStepChanged(CurStep: TSetupStep);',
     'if CurStep = ssPostInstall then',
     'procedure RemoveLegacyRuntimeFiles();',
-    'DeleteFile(LegacyFile)')) {
+    'DeleteFile(LegacyFile)',
+    'procedure RemoveEmptyLegacyRuntimeDirectories();',
+    'for DirectoryIndex := LegacyRuntimeDirectoryCount - 1 downto 0 do',
+    'CleanupError := ValidateLegacyCleanupPath(LegacyDirectory);',
+    'DirExists(LegacyDirectory) and not RemoveDir(LegacyDirectory)',
+    'RemoveEmptyLegacyRuntimeDirectories();')) {
     if (!$installerSource.Contains($requiredText)) { throw "installer.iss is missing required cleanup wiring: $requiredText" }
 }
 if ($installerSource.Contains('[InstallDelete]')) { throw 'Legacy cleanup must run after the replacement executable is installed, not through [InstallDelete].' }
+if ($installerSource.Contains('DelTree(')) { throw 'Legacy cleanup must not recursively delete legacy runtime directories.' }
 
 Write-Host "Installer cleanup validation passed: $($cleanupEntries.Count) explicit legacy files and $($directoryEntries.Count) checked child directories."

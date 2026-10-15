@@ -7,6 +7,19 @@ public interface IUiDispatcher
     void Post(Action action);
 }
 
+public interface IInstallerLauncher
+{
+    void OpenInstaller(string path);
+}
+
+public sealed record UserNotification(string Title, string Message);
+
+public interface IUserNotifications
+{
+    event EventHandler<UserNotification>? Published;
+    void Show(string title, string message);
+}
+
 public interface IDesktopFiles
 {
     bool CanOpenInCode { get; }

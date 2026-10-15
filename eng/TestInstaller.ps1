@@ -186,14 +186,36 @@ $null = Invoke-SetupCheck $upgrade 'legacy-fixture-install' -Executable (Join-Pa
 Assert-Check (Test-Path -LiteralPath (Join-Path $upgrade 'unins000.dat')) 'Legacy fixture did not create uninstall records.'
 foreach ($entry in $entries) { Assert-Check (Test-Path -LiteralPath (Join-Path $upgrade $entry)) "Legacy fixture did not install $entry." }
 Complete-Check 'Legacy 1.3 fixture installs runtime files and real uninstall records'
-$protected = @('settings.json', 'profiles.json', 'operations.log', 'user-data.json', 'unknown-plugin.dll', 'Mods\RunwayMP\dlls\main.dll', 'custom\UE4SS.dll')
+$protected = @(
+    'settings.json',
+    'profiles.json',
+    'operations.log',
+    'user-data.json',
+    'unknown-plugin.dll',
+    'Mods\RunwayMP\dlls\main.dll',
+    'custom\UE4SS.dll',
+    'sv-SE\user-language-file.txt',
+    'publish\sv-SE\user-language-file.txt'
+)
 foreach ($entry in $protected) { New-FixtureFile (Join-Path $upgrade $entry) ('user data: ' + $entry) }
 $null = Invoke-SetupCheck $upgrade 'legacy-upgrade'
 Assert-Payload $upgrade
 foreach ($entry in $entries) { Assert-Check (!(Test-Path -LiteralPath (Join-Path $upgrade $entry))) "Legacy runtime file survived upgrade: $entry" }
 foreach ($entry in $protected) { Assert-Check ([IO.File]::ReadAllText((Join-Path $upgrade $entry)) -eq ('user data: ' + $entry)) "User file changed during upgrade: $entry" }
+$legacyDirectories = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'LegacyRuntimeDirectories.iss') | ForEach-Object {
+    if ($_ -match "^\s*'([^']+)'(?:,|\];)$") { $Matches[1] }
+})
+foreach ($directory in $legacyDirectories) {
+    $containsUserData = @($protected | Where-Object { $_.StartsWith($directory + '\', [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0
+    if ($containsUserData) {
+        Assert-Check (Test-Path -LiteralPath (Join-Path $upgrade $directory) -PathType Container) "Installer removed a legacy directory containing user data: $directory"
+    }
+    else {
+        Assert-Check (!(Test-Path -LiteralPath (Join-Path $upgrade $directory))) "Installer left an empty legacy runtime directory: $directory"
+    }
+}
 $null = Get-Uninstaller $upgrade
-Complete-Check 'Upgrade removes all 1086 legacy runtime files and preserves user data and unknown DLLs'
+Complete-Check 'Upgrade removes legacy files and empty runtime directories while preserving user data and language folders with user files'
 $null = Invoke-SetupCheck $upgrade 'reinstall'
 Assert-Payload $upgrade
 $uninstaller = Get-Uninstaller $upgrade
@@ -204,12 +226,14 @@ $blockedExe = Join-Path $blocked 'Neodash Mod Loader.exe'
 $blockedLegacy = Join-Path $blocked 'coreclr.dll'
 New-FixtureFile $blockedExe 'existing executable is locked'
 New-FixtureFile $blockedLegacy
+[IO.Directory]::CreateDirectory((Join-Path $blocked 'sv-SE')) | Out-Null
 $handle = [IO.File]::Open($blockedExe, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
 try { $null = Invoke-SetupCheck $blocked 'blocked-exe-upgrade' $false }
 finally { $handle.Dispose() }
 Assert-Check ([IO.File]::ReadAllText($blockedExe) -eq 'existing executable is locked') 'A failed install damaged the previous executable.'
 Assert-Check ([IO.File]::ReadAllText($blockedLegacy) -eq 'legacy runtime fixture') 'Legacy cleanup ran before the replacement executable was installed.'
-Complete-Check 'Failed EXE replacement leaves the old executable and runtime intact'
+Assert-Check (Test-Path -LiteralPath (Join-Path $blocked 'sv-SE') -PathType Container) 'Legacy directory cleanup ran before the replacement executable was installed.'
+Complete-Check 'Failed EXE replacement leaves the old executable, runtime files, and legacy directories intact'
 
 $locked = Join-Path $root 'locked-legacy'
 $lockedFile = Join-Path $locked 'coreclr.dll'
@@ -270,9 +294,6 @@ do {
     Start-Sleep -Milliseconds 100
 } while ($cleanupWait.Elapsed.TotalSeconds -lt 5)
 Assert-Check ($records.Count -eq 0) 'Uninstall left an uninstall executable or record.'
-$legacyDirectories = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'LegacyRuntimeDirectories.iss') | ForEach-Object {
-    if ($_ -match "^\s*'([^']+)'(?:,|\];)$") { $Matches[1] }
-})
 foreach ($directory in $legacyDirectories) {
     $containsUserData = @($protected | Where-Object { $_.StartsWith($directory + '\', [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0
     if (!$containsUserData) {

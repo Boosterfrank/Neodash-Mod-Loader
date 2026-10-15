@@ -113,6 +113,6 @@ public interface IConfigurationService
 
 public interface IApplicationUpdates
 {
-    Task<Version?> FindUpdateAsync();
+    Task<Version?> FindUpdateAsync(CancellationToken token = default);
     Task<string> DownloadAsync(IProgress<OperationProgress>? progress = null, CancellationToken token = default);
 }

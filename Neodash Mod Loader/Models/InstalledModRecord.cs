@@ -20,7 +20,13 @@ public class Ue4SsInstallationRecord
     public string? Version { get; set; }
 }
 
-public record OperationProgress(string Message, double? Percent = null)
+public record OperationProgress(
+    string Message,
+    double? Percent = null,
+    long? BytesReceived = null,
+    long? TotalBytes = null,
+    double? BytesPerSecond = null,
+    TimeSpan? EstimatedRemaining = null)
 {
     public OperationProgress() : this(string.Empty) { }
 }

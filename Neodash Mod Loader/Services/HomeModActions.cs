@@ -77,13 +77,17 @@ public sealed partial class HomeModActions(IModWorkspace workspace, IGameService
                 return false;
             return await RunAsync("Installing dropped mods", async (p, t) =>
             {
-                foreach (DroppedMod item in dropped)
+                for (int index = 0; index < dropped.Count; index++)
                 {
                     t.ThrowIfCancellationRequested();
+                    var item = dropped[index];
+                    var progress = new ItemOperationProgress(p, Path.GetFileName(Path.TrimEndingDirectorySeparator(item.SourcePath)), index, dropped.Count);
+                    progress.Report(new("Starting…"));
                     if (item.IsFolder)
-                        await workspace.ImportFolderAsync(item.SourcePath, p, t);
+                        await workspace.ImportFolderAsync(item.SourcePath, progress, t);
                     else
-                        await workspace.ImportZipAsync(item.SourcePath, p, t);
+                        await workspace.ImportZipAsync(item.SourcePath, progress, t);
+                    progress.Report(new("Installed", 100));
                 }
             });
         }

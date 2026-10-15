@@ -3,7 +3,7 @@ using Neodash_Mod_Loader.Models;
 
 namespace Neodash_Mod_Loader.Services;
 
-public sealed class HomeProfileActions(IProfileService profiles, INavigationGuard navigation, IDesktopDialogs dialogs, IDesktopFiles files)
+public sealed class HomeProfileActions(IProfileService profiles, INavigationGuard navigation, IDesktopDialogs dialogs, IDesktopFiles files, IUserNotifications notifications)
 {
     public IReadOnlyList<ModProfile> Profiles => profiles.Profiles;
     public ModProfile ActiveProfile => profiles.ActiveProfile;
@@ -87,7 +87,10 @@ public sealed class HomeProfileActions(IProfileService profiles, INavigationGuar
                 return;
             string? path = await files.SaveFileAsync(profiles.ActiveProfile.Name + ".neodash-profile", ".json");
             if (path is not null)
+            {
                 profiles.Export(path);
+                notifications.Show("Profile exported", Path.GetFileName(path));
+            }
         }
         catch (Exception ex)
         {
@@ -187,6 +190,7 @@ public sealed class HomeProfileActions(IProfileService profiles, INavigationGuar
         }
 
         name.TextChanged += (_, _) => Validate();
+        dialog.Opened += (_, _) => name.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
         Validate();
         return await dialogs.ShowDialogAsync(dialog) == ContentDialogResult.Primary ? name.Text.Trim() : null;
     }

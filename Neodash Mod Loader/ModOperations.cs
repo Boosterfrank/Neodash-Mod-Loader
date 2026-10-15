@@ -405,26 +405,14 @@ public static partial class ModOperations
         string path = Path.Combine(AppStorage.DownloadsPath, Guid.NewGuid().ToString("N") + extension);
         try
         {
+            progress?.Report(new("Connecting to download server…"));
             using var response = await Client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, token);
             response.EnsureSuccessStatusCode();
             long? length = response.Content.Headers.ContentLength;
-            if (length > 1_073_741_824) throw new InvalidDataException("The download is larger than the supported 1 GB limit.");
             await using var input = await response.Content.ReadAsStreamAsync(token);
             await using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous);
-            byte[] buffer = new byte[81920];
-            long total = 0;
-            int count;
-            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-            while ((count = await input.ReadAsync(buffer, token)) != 0)
-            {
-                total += count;
-                if (total > 1_073_741_824) throw new InvalidDataException("The download exceeded the supported 1 GB limit.");
-                await output.WriteAsync(buffer.AsMemory(0, count), token);
-                hash.AppendData(buffer.AsSpan(0, count));
-                progress?.Report(new($"Downloading… {total / 1048576.0:F1} MB", length is > 0 ? total * 100.0 / length.Value : null));
-            }
-            if (!string.IsNullOrWhiteSpace(sha256) && !Convert.ToHexString(hash.GetHashAndReset()).Equals(sha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("The download checksum did not match the mod library. No game files were changed.");
+            await DownloadTransfer.CopyAndVerifyAsync(input, output, length, sha256, progress, token);
+            token.ThrowIfCancellationRequested();
             return path;
         }
         catch { DeleteDownload(path); throw; }

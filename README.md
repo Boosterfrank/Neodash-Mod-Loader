@@ -81,7 +81,9 @@ Supported packages contain UE4SS mod folders, such as a folder with `Scripts/`, 
 
 The **Entry point** column shows a mod's native DLL, Lua script, or both. Package updates replace the old mod folders, removing obsolete DLLs while keeping supported user configuration and a recovery snapshot. UE4SS updates also remove obsolete runtime DLLs recorded for that game; unrelated DLLs and files inside user mod folders are preserved.
 
-The version 1.4 single-EXE installer cleans up the known runtime sidecars from older multi-file app installations after installing the new executable. It preserves settings and profiles in `%LOCALAPPDATA%\Neodash Mod Loader`.
+The version 1.4 single-EXE installer cleans up the known runtime sidecars and their empty language/runtime folders from older multi-file app installations after installing the new executable. Non-empty or unknown folders are retained. It preserves settings and profiles in `%LOCALAPPDATA%\Neodash Mod Loader`.
+
+Downloads show transferred size, speed, percentage, and an approximate time remaining when the server supplies a total size. Operations support safe cancellation where available and report completion in a dismissible notice. Configuration editing uses a wider dialog and keeps your draft open if saving fails.
 
 ### Profiles
 
