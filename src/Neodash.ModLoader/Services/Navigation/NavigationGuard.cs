@@ -14,11 +14,16 @@ public sealed class NavigationGuard(IModEditSession edits, IModWorkspace workspa
 
     public async Task<bool> ResolveUnsavedChangesAsync(string message)
     {
+        if (dialogs.IsDialogOpen || !await EnsureNotBusyAsync())
+            return false;
         if (!edits.HasUnsavedChanges)
             return true;
+
+        UnsavedChangesChoice choice = await dialogs.AskUnsavedChangesAsync(message);
+        // The workspace or dialog state may have changed while awaiting the user's choice.
         if (IsBlocked)
             return false;
-        return await dialogs.AskUnsavedChangesAsync(message) switch
+        return choice switch
         {
             UnsavedChangesChoice.Save => await edits.SaveAsync(),
             UnsavedChangesChoice.Discard => DiscardAndContinue(),

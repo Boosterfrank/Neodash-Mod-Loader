@@ -6,17 +6,19 @@ public sealed class AppUpdateCoordinator(IApplicationUpdates updates, IModWorksp
     private readonly CancellationTokenSource _lifetime = new();
     private bool _checking;
     private bool _disposed;
+    private bool IsBlocked => _disposed || workspace.IsBusy || dialogs.IsDialogOpen;
 
     public async Task CheckAsync(bool showUpToDate = false)
     {
-        if (_disposed || _checking || workspace.IsBusy || dialogs.IsDialogOpen) return;
+        if (_checking || IsBlocked) return;
         _checking = true;
         bool userAccepted = false;
         CancellationToken lifetime = _lifetime.Token;
         try
         {
             var result = await FindUpdateAsync(showUpToDate, lifetime);
-            if (_disposed || !result.Completed) return;
+            // Background checks must not interrupt work started while the network request was pending.
+            if (IsBlocked || !result.Completed) return;
             if (result.Version is null)
             {
                 if (showUpToDate)
@@ -24,8 +26,9 @@ public sealed class AppUpdateCoordinator(IApplicationUpdates updates, IModWorksp
                 return;
             }
             userAccepted = await dialogs.ConfirmAsync("Update available", $"Version {result.Version} is available. Download and open its installer?", "Download update");
-            if (!userAccepted || _disposed) return;
+            if (!userAccepted || IsBlocked) return;
             if (edits.HasUnsavedChanges && !await edits.SaveAsync()) return;
+            if (IsBlocked) return;
             string? installer = null;
             bool success = await dialogs.RunAsync("Download application update", async (progress, token) =>
             {
@@ -35,7 +38,13 @@ public sealed class AppUpdateCoordinator(IApplicationUpdates updates, IModWorksp
                 progress.Report(new("Download complete — preparing installer…", 100));
             });
             if (!_disposed && success && installer is not null)
-                launcher.OpenInstaller(installer);
+            {
+                if (IsBlocked)
+                    await dialogs.ShowMessageAsync("Update ready to install",
+                        "The installer was downloaded, but the app is busy. Finish the current task, then open this file to install the update:\n\n" + installer);
+                else
+                    launcher.OpenInstaller(installer);
+            }
         }
         catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { /* Window closed. */ }
         catch (Exception ex)

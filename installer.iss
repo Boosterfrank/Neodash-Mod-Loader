@@ -1,7 +1,7 @@
 [Setup]
 ; Basic Application Information
 AppName=Neodash Mod Loader
-AppVersion=1.4.0.0
+AppVersion=1.4.1.0
 VersionInfoVersion={#SetupSetting("AppVersion")}
 AppPublisher=Boosterfrank
 DefaultDirName={autopf}\Neodash Mod Loader

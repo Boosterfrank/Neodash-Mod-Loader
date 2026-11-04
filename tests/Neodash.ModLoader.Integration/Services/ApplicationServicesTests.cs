@@ -148,6 +148,62 @@ public sealed class ApplicationServicesTests
     }
 
     [Fact]
+    public async Task NavigationGuardBlocksBusyWorkspaceWithoutPendingChanges()
+    {
+        var (session, workspace, _, dialogs) = NewSession();
+        session.Reload();
+        workspace.IsBusyValue = true;
+        var guard = new NavigationGuard(session, workspace, dialogs);
+
+        Assert.False(await guard.ResolveUnsavedChangesAsync("continue"));
+        Assert.Equal("Another mod operation is running", Assert.Single(dialogs.Messages));
+        Assert.Equal(0, dialogs.UnsavedPrompts);
+        Assert.Equal(0, workspace.ApplyCount);
+        workspace.IsBusyValue = false;
+        Assert.True(await guard.ResolveUnsavedChangesAsync("retry"));
+    }
+
+    [Fact]
+    public async Task NavigationGuardBlocksOpenDialogWithoutPendingChanges()
+    {
+        var (session, workspace, _, dialogs) = NewSession();
+        session.Reload();
+        dialogs.IsDialogOpen = true;
+        var guard = new NavigationGuard(session, workspace, dialogs);
+
+        Assert.False(await guard.ResolveUnsavedChangesAsync("continue"));
+        Assert.Empty(dialogs.Messages);
+        Assert.Equal(0, dialogs.UnsavedPrompts);
+        Assert.Equal(0, workspace.ApplyCount);
+        dialogs.IsDialogOpen = false;
+        Assert.True(await guard.ResolveUnsavedChangesAsync("retry"));
+    }
+
+    [Theory]
+    [InlineData(UnsavedChangesChoice.Save)]
+    [InlineData(UnsavedChangesChoice.Discard)]
+    public async Task NavigationGuardRetainsDraftWhenWorkspaceBecomesBusyDuringPrompt(UnsavedChangesChoice choice)
+    {
+        var (session, workspace, _, dialogs) = NewSession();
+        session.Reload();
+        session.Mods[0].IsEnabled = false;
+        var answer = new TaskCompletionSource<UnsavedChangesChoice>(TaskCreationOptions.RunContinuationsAsynchronously);
+        dialogs.UnsavedAnswer = answer.Task;
+        Task<bool> resolve = new NavigationGuard(session, workspace, dialogs).ResolveUnsavedChangesAsync("continue");
+        Assert.Equal(1, dialogs.UnsavedPrompts);
+        Assert.False(resolve.IsCompleted);
+
+        workspace.IsBusyValue = true;
+        answer.SetResult(choice);
+
+        Assert.False(await resolve);
+        Assert.True(session.HasUnsavedChanges);
+        Assert.False(session.Mods[0].IsEnabled);
+        Assert.True(session.Mods[0].OriginalIsEnabled);
+        Assert.Equal(0, workspace.ApplyCount);
+    }
+
+    [Fact]
     public void StartupCorruptSettingsBlocksAutoCompletionAndExistingRuntimeCompletesSetup()
     {
         var settings = new FakeSettings
@@ -305,6 +361,8 @@ public sealed class ApplicationServicesTests
     private sealed class FakeDialogs : IUserDialogs
     {
         public UnsavedChangesChoice Choice;
+        public Task<UnsavedChangesChoice>? UnsavedAnswer;
+        public int UnsavedPrompts;
         public bool IsDialogOpen { get; set; }
         public List<string> Messages { get; } = [];
 
@@ -315,7 +373,11 @@ public sealed class ApplicationServicesTests
         }
 
         public Task<bool> ConfirmAsync(string title, string message, string primary = "Continue") => throw new NotSupportedException();
-        public Task<UnsavedChangesChoice> AskUnsavedChangesAsync(string message) => Task.FromResult(Choice);
+        public Task<UnsavedChangesChoice> AskUnsavedChangesAsync(string message)
+        {
+            UnsavedPrompts++;
+            return UnsavedAnswer ?? Task.FromResult(Choice);
+        }
         public Task<bool> RunAsync(string title, Func<IProgress<OperationProgress>, CancellationToken, Task> action, bool allowCancellation = true) => throw new NotSupportedException();
     }
 

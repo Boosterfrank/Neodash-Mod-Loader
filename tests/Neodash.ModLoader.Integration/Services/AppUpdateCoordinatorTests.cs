@@ -111,6 +111,94 @@ public sealed class AppUpdateCoordinatorTests
         Assert.Empty(fixture.Launcher.Opened);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BackgroundCheckDoesNotInterruptWorkStartedDuringLookup(bool dialogOpen)
+    {
+        using var fixture = new Fixture();
+        var result = new TaskCompletionSource<Version?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.Updates.Find = _ => result.Task;
+        Task check = fixture.Coordinator.CheckAsync();
+        Assert.Equal(1, fixture.Updates.Checks);
+        Assert.False(check.IsCompleted);
+
+        fixture.Dialogs.IsDialogOpen = dialogOpen;
+        fixture.Workspace.IsBusy = !dialogOpen;
+        result.SetResult(new Version(1, 5));
+        await check;
+
+        Assert.Equal(0, fixture.Dialogs.Confirmations);
+        Assert.Equal(0, fixture.Updates.Downloads);
+        Assert.Empty(fixture.Dialogs.Messages);
+        Assert.Empty(fixture.Launcher.Opened);
+
+        fixture.Dialogs.IsDialogOpen = false;
+        fixture.Workspace.IsBusy = false;
+        await fixture.Coordinator.CheckAsync();
+        Assert.Equal(2, fixture.Updates.Checks);
+        Assert.Equal(1, fixture.Dialogs.Confirmations);
+        Assert.Equal(["installer.exe"], fixture.Launcher.Opened);
+    }
+
+    [Fact]
+    public async Task AcceptedUpdateDoesNotSaveOrDownloadWhenWorkspaceBecomesBusy()
+    {
+        using var fixture = new Fixture();
+        fixture.Edits.HasUnsavedChanges = true;
+        var answer = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.Dialogs.ConfirmationAnswer = answer.Task;
+        Task check = fixture.Coordinator.CheckAsync();
+        Assert.Equal(1, fixture.Dialogs.Confirmations);
+        Assert.False(check.IsCompleted);
+
+        fixture.Workspace.IsBusy = true;
+        answer.SetResult(true);
+        await check;
+
+        Assert.Equal(0, fixture.Edits.Saves);
+        Assert.Equal(0, fixture.Updates.Downloads);
+        Assert.Empty(fixture.Dialogs.Operations);
+        Assert.Empty(fixture.Launcher.Opened);
+    }
+
+    [Fact]
+    public async Task DisposalWhileSavingPendingChangesDoesNotStartDownload()
+    {
+        using var fixture = new Fixture();
+        fixture.Edits.HasUnsavedChanges = true;
+        var saved = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.Edits.SaveCompletion = saved.Task;
+        Task check = fixture.Coordinator.CheckAsync();
+        Assert.Equal(1, fixture.Edits.Saves);
+        Assert.False(check.IsCompleted);
+
+        fixture.Coordinator.Dispose();
+        saved.SetResult(true);
+        await check;
+
+        Assert.Equal(0, fixture.Updates.Downloads);
+        Assert.Empty(fixture.Dialogs.Operations);
+        Assert.Empty(fixture.Dialogs.Messages);
+        Assert.Empty(fixture.Launcher.Opened);
+    }
+
+    [Fact]
+    public async Task CompletedDownloadProvidesInstallerPathWhenAppBecomesBusy()
+    {
+        using var fixture = new Fixture();
+        fixture.Updates.AfterDownload = () => fixture.Workspace.IsBusy = true;
+
+        await fixture.Coordinator.CheckAsync();
+
+        Assert.Equal(1, fixture.Updates.Downloads);
+        Assert.Empty(fixture.Launcher.Opened);
+        var message = Assert.Single(fixture.Dialogs.Messages);
+        Assert.Equal("Update ready to install", message.Title);
+        Assert.Contains("Finish the current task", message.Message);
+        Assert.EndsWith("installer.exe", message.Message);
+    }
+
     private sealed class Fixture : IDisposable
     {
         public FakeUpdates Updates { get; } = new();
@@ -118,8 +206,9 @@ public sealed class AppUpdateCoordinatorTests
         public FakeLauncher Launcher { get; } = new();
         public FakeEdits Edits { get; } = new();
         public FakeDiagnostics Diagnostics { get; } = new();
+        public FakeWorkspace Workspace { get; } = new();
         public AppUpdateCoordinator Coordinator { get; }
-        public Fixture() => Coordinator = new(Updates, new FakeWorkspace(), Edits, Dialogs, Launcher, Diagnostics);
+        public Fixture() => Coordinator = new(Updates, Workspace, Edits, Dialogs, Launcher, Diagnostics);
         public void Dispose()
         {
             Coordinator.Dispose();
@@ -148,14 +237,20 @@ public sealed class AppUpdateCoordinatorTests
     private sealed class FakeDialogs : IUserDialogs, IDisposable
     {
         public CancellationTokenSource Cancellation { get; } = new();
-        public bool IsDialogOpen => false;
+        public bool IsDialogOpen { get; set; }
         public bool Accept { get; set; } = true;
+        public Task<bool>? ConfirmationAnswer { get; set; }
+        public int Confirmations { get; private set; }
         public string? CancelOperation { get; set; }
         public List<string> Operations { get; } = [];
         public List<OperationProgress> Progress { get; } = [];
         public List<(string Title, string Message)> Messages { get; } = [];
         public Task ShowMessageAsync(string title, string message) { Messages.Add((title, message)); return Task.CompletedTask; }
-        public Task<bool> ConfirmAsync(string title, string message, string primary = "Continue") => Task.FromResult(Accept);
+        public Task<bool> ConfirmAsync(string title, string message, string primary = "Continue")
+        {
+            Confirmations++;
+            return ConfirmationAnswer ?? Task.FromResult(Accept);
+        }
         public Task<UnsavedChangesChoice> AskUnsavedChangesAsync(string message) => throw new NotSupportedException();
         public async Task<bool> RunAsync(string title, Func<IProgress<OperationProgress>, CancellationToken, Task> action, bool allowCancellation = true)
         {
@@ -188,12 +283,13 @@ public sealed class AppUpdateCoordinatorTests
     {
         public bool HasUnsavedChanges { get; set; }
         public bool SaveResult { get; set; } = true;
+        public Task<bool>? SaveCompletion { get; set; }
         public int Saves { get; private set; }
         public IReadOnlyList<EditableMod> Mods => [];
         public event EventHandler? Changed { add { /* No background notifications in this fake. */ } remove { /* No subscriptions to retain. */ } }
         public void Reload() => throw new NotSupportedException();
         public void Discard() => throw new NotSupportedException();
-        public Task<bool> SaveAsync() { Saves++; return Task.FromResult(SaveResult); }
+        public Task<bool> SaveAsync() { Saves++; return SaveCompletion ?? Task.FromResult(SaveResult); }
     }
 
     private sealed class FakeDiagnostics : IAppDiagnostics
@@ -209,7 +305,7 @@ public sealed class AppUpdateCoordinatorTests
 
     private sealed class FakeWorkspace : IModWorkspace
     {
-        public bool IsBusy => false;
+        public bool IsBusy { get; set; }
         public event EventHandler? Changed { add { /* No workspace events for update tests. */ } remove { /* No subscriptions to retain. */ } }
         public IReadOnlyList<InstalledModState> GetInstalledMods() => throw new NotSupportedException();
         public string GetModFolder(string name) => throw new NotSupportedException();
